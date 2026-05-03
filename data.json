@@ -1,0 +1,14 @@
+{
+  "lastSync": null,
+  "clients": [
+    { "id": "elfs_active",              "username": "elfs_active",              "name": "Elfs Active",        "category": "Activewear", "color": "#FE2C55" },
+    { "id": "shumijapan",               "username": "shumijapan",               "name": "Shumi Japan",         "category": "Lifestyle",  "color": "#7C5CFC" },
+    { "id": "kamlaijakarta",            "username": "kamlaijakarta",            "name": "Kamlai Jakarta",      "category": "Fashion",    "color": "#25F4EE" },
+    { "id": "pieraspropolinseofficial", "username": "pieraspropolinseofficial", "name": "Pieras Propolinse",   "category": "Beauty",     "color": "#FF9500" },
+    { "id": "brait.idn",                "username": "brait.idn",                "name": "Brait IDN",           "category": "Lifestyle",  "color": "#00D47E" },
+    { "id": "m2000.outdoor",            "username": "m2000.outdoor",            "name": "M2000 Outdoor",       "category": "Outdoor",    "color": "#F97316" },
+    { "id": "elfs_fits",                "username": "elfs_fits",                "name": "Elfs Fits",           "category": "Fashion",    "color": "#A855F7" },
+    { "id": "alamsarideltamas",         "username": "alamsarideltamas",         "name": "Alam Sari Deltamas",  "category": "Property",   "color": "#FE2C55" }
+  ],
+  "data": {}
+}
