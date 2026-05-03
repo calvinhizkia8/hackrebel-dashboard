@@ -1,0 +1,13 @@
+{
+  "name": "hackrebel-dashboard",
+  "version": "1.0.0",
+  "description": "Hack Rebel Social — TikTok Agency Dashboard",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@vercel/kv": "^2.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
