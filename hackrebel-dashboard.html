@@ -1,0 +1,1884 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Hack Rebel Social — TikTok Dashboard</title>
+<style>
+/* ─── Reset ─── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#000;--s1:#0a0a0a;--s2:#111;--s3:#161616;
+  --b1:#1c1c1c;--b2:#252525;--b3:#303030;
+  --t1:#fff;--t2:#999;--t3:#555;
+  --pink:#FE2C55;--cyan:#25F4EE;--purple:#7C5CFC;
+  --green:#00D47E;--amber:#FF9500;
+  --r:12px;--sh:0 4px 24px rgba(0,0,0,.6);
+}
+html,body{font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif;
+  background:var(--bg);color:var(--t1);min-height:100vh;font-size:14px;
+  -webkit-font-smoothing:antialiased}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input{font-family:inherit;outline:none}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:var(--b3);border-radius:2px}
+
+/* ─── App layout ─── */
+.app{display:flex;min-height:100vh}
+
+/* ─── Sidebar ─── */
+.sidebar{
+  width:224px;min-width:224px;background:var(--s1);
+  border-right:1px solid var(--b1);
+  display:flex;flex-direction:column;
+  position:sticky;top:0;height:100vh;overflow-y:auto;
+  z-index:90;
+}
+.sb-logo{padding:18px 16px 14px;border-bottom:1px solid var(--b1)}
+.sb-tagline{font-size:10px;color:var(--t3);letter-spacing:.14em;text-transform:uppercase;margin-top:5px}
+.sb-nav{padding:10px 8px;flex:1}
+.sb-section{font-size:10px;color:var(--t3);letter-spacing:.12em;text-transform:uppercase;padding:10px 10px 5px}
+.sb-link{
+  display:flex;align-items:center;gap:9px;
+  padding:7px 10px;border-radius:8px;font-size:12.5px;
+  color:var(--t3);cursor:pointer;margin-bottom:1px;
+  border:1px solid transparent;transition:all .14s;user-select:none;
+}
+.sb-link:hover{background:var(--b1);color:var(--t1)}
+.sb-link.active{background:rgba(254,44,85,.08);color:var(--pink);border-color:rgba(254,44,85,.18)}
+.sb-link .ico{font-size:14px;width:16px;text-align:center;flex-shrink:0}
+.sb-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.sb-warn-dot{width:6px;height:6px;border-radius:50%;background:var(--pink);flex-shrink:0;margin-left:auto}
+.sb-footer{padding:12px 14px;border-top:1px solid var(--b1);font-size:10.5px;color:var(--t3);line-height:1.7}
+
+/* ─── Main ─── */
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+
+/* ─── Topbar ─── */
+.topbar{
+  height:52px;background:rgba(0,0,0,.95);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--b1);
+  display:flex;align-items:center;padding:0 22px;gap:10px;
+  position:sticky;top:0;z-index:80;
+}
+.topbar-left{flex:1;display:flex;align-items:center;gap:8px;min-width:0}
+.topbar-title{font-size:14.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar-sub{font-size:11.5px;color:var(--t3)}
+.topbar-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+
+/* ─── Buttons ─── */
+.btn{
+  display:inline-flex;align-items:center;gap:5px;padding:6px 13px;
+  border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;
+  transition:all .14s;border:none;white-space:nowrap;
+}
+.btn-pink{background:var(--pink);color:#fff;box-shadow:0 2px 10px rgba(254,44,85,.3)}
+.btn-pink:hover{background:#e0253d;transform:translateY(-1px)}
+.btn-ghost{background:var(--s2);color:var(--t2);border:1px solid var(--b2)}
+.btn-ghost:hover{background:var(--s3);color:var(--t1)}
+.btn-outline{background:transparent;color:var(--t2);border:1px solid var(--b2)}
+.btn-outline:hover{border-color:var(--b3);color:var(--t1)}
+.btn-sm{padding:5px 10px;font-size:11.5px}
+
+/* ─── Live badge ─── */
+.live{display:flex;align-items:center;gap:5px;font-size:10.5px;font-weight:600;
+  color:var(--green);background:rgba(0,212,126,.07);border:1px solid rgba(0,212,126,.2);
+  padding:3px 9px;border-radius:20px}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:blink 1.8s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ─── Content ─── */
+.content{padding:22px;flex:1}
+
+/* ─── Fetch notice bar ─── */
+.fetch-notice{
+  display:flex;align-items:center;gap:8px;
+  background:rgba(37,244,238,.05);border-bottom:1px solid rgba(37,244,238,.1);
+  padding:8px 22px;font-size:11.5px;color:var(--cyan);
+}
+.fetch-notice.hide{display:none}
+.spin{animation:rotate .7s linear infinite;flex-shrink:0}
+@keyframes rotate{to{transform:rotate(360deg)}}
+
+/* ─── Summary cards ─── */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:22px}
+@media(max-width:720px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
+.kpi-card{
+  background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);
+  padding:14px 16px;position:relative;overflow:hidden;
+}
+.kpi-card::after{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:var(--accent,var(--pink));opacity:.65;
+}
+.kpi-label{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:7px}
+.kpi-value{font-size:22px;font-weight:800;letter-spacing:-.03em;line-height:1}
+.kpi-sub{font-size:11px;color:var(--t3);margin-top:4px}
+
+/* ─── Section head ─── */
+.sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.sec-head h2{font-size:13.5px;font-weight:700}
+.sec-head aside{font-size:11px;color:var(--t3)}
+
+/* ─── Client grid ─── */
+.cgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media(max-width:680px){.cgrid{grid-template-columns:1fr}}
+
+/* ─── Client card ─── */
+.ccard{
+  background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);
+  padding:15px;cursor:pointer;position:relative;overflow:hidden;
+  transition:border-color .18s,background .18s,transform .18s;
+}
+.ccard:hover{border-color:var(--b2);background:var(--s2);transform:translateY(-1px)}
+.ccard:active{transform:none}
+
+/* warn ribbon */
+.w-ribbon{
+  position:absolute;top:0;right:0;
+  background:var(--pink);color:#fff;
+  font-size:9px;font-weight:700;letter-spacing:.05em;
+  padding:3px 9px 3px 7px;border-radius:0 var(--r) 0 9px;
+}
+/* loading overlay */
+.ccard.loading{cursor:default;opacity:.75}
+.ccard.loading:hover{transform:none;border-color:var(--b1);background:var(--s1)}
+
+/* card header */
+.ch{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.av{
+  border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:800;color:#fff;font-size:13px;
+  width:38px;height:38px;
+}
+.ci{flex:1;min-width:0}
+.cname{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:1px}
+.chandle{font-size:11px;color:var(--t3)}
+.cbadge{font-size:9.5px;background:var(--s3);border:1px solid var(--b2);color:var(--t3);
+  padding:2px 7px;border-radius:20px;white-space:nowrap;flex-shrink:0}
+
+/* card stats */
+.cdivider{border:none;border-top:1px solid var(--b1);margin:0 0 11px}
+.cstats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}
+.cslabel{font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.09em;margin-bottom:3px}
+.csval{font-size:14px;font-weight:700}
+.cfooter{display:flex;align-items:center;justify-content:space-between}
+.clast{font-size:10.5px;color:var(--t3)}
+.clast.warn{color:var(--pink);font-weight:600}
+.carrow{font-size:11px;color:var(--b3);transition:color .14s}
+.ccard:hover .carrow{color:var(--t3)}
+
+/* data status badge */
+.dstatus{
+  display:inline-flex;align-items:center;gap:4px;
+  font-size:9px;font-weight:600;padding:2px 6px;border-radius:20px;
+  margin-top:2px;
+}
+.dstatus.live{background:rgba(0,212,126,.1);color:var(--green);border:1px solid rgba(0,212,126,.2)}
+.dstatus.stale{background:rgba(255,149,0,.1);color:var(--amber);border:1px solid rgba(255,149,0,.2)}
+.dstatus.err{background:rgba(254,44,85,.1);color:var(--pink);border:1px solid rgba(254,44,85,.2)}
+.dstatus.mock{background:rgba(124,92,252,.1);color:var(--purple);border:1px solid rgba(124,92,252,.2)}
+
+/* ─── Detail page ─── */
+.dpage{max-width:640px;margin:0 auto}
+.dback{
+  display:flex;align-items:center;gap:8px;
+  padding:10px 14px;border-bottom:1px solid var(--b1);
+  position:sticky;top:52px;background:var(--bg);z-index:40;
+}
+.profile-wrap{text-align:center;padding:24px 16px 18px;border-bottom:1px solid var(--b1)}
+.profile-av{
+  width:70px;height:70px;border-radius:50%;margin:0 auto 10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;font-weight:800;color:#fff;
+}
+.pnick{font-size:16px;font-weight:800;margin-bottom:2px}
+.phandle{font-size:11.5px;color:var(--t3);margin-bottom:4px}
+.ptag{display:inline-block;font-size:10px;background:var(--s2);border:1px solid var(--b2);
+  color:var(--t3);padding:2px 9px;border-radius:20px;margin-bottom:14px}
+.pstats{display:flex;justify-content:center;gap:24px}
+.psi{text-align:center}
+.psv{font-size:17px;font-weight:800}
+.psl{font-size:10px;color:var(--t3);margin-top:2px}
+
+.kstrip{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--b1)}
+.ksi{text-align:center;padding:11px 8px;border-right:1px solid var(--b1)}
+.ksi:last-child{border-right:none}
+.ksv{font-size:14px;font-weight:800}
+.ksl{font-size:9.5px;color:var(--t3);margin-top:3px}
+
+.wbar{display:flex;align-items:center;gap:7px;background:rgba(254,44,85,.07);
+  border-bottom:1px solid rgba(254,44,85,.15);padding:9px 14px;font-size:11.5px;color:var(--pink)}
+
+.tabs{display:flex;border-bottom:1px solid var(--b1);position:sticky;top:52px;background:var(--bg);z-index:30}
+.tab{flex:1;padding:10px;text-align:center;font-size:12.5px;color:var(--t3);cursor:pointer;
+  border-bottom:2px solid transparent;transition:all .14s}
+.tab.active{color:var(--t1);border-color:var(--t1);font-weight:600}
+
+/* ─── Video grid ─── */
+.vgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px}
+.vcell{position:relative;overflow:hidden;cursor:pointer;background:var(--s2)}
+.vcell::before{content:'';display:block;padding-top:177.78%}
+.vcell img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .22s}
+.vcell:hover img{transform:scale(1.05)}
+.vbot{
+  position:absolute;inset-x-0;bottom:0;pointer-events:none;
+  background:linear-gradient(to top,rgba(0,0,0,.85) 0%,transparent 55%);
+  padding:22px 6px 6px;display:flex;align-items:flex-end;gap:3px;
+}
+.vviews{font-size:10.5px;font-weight:700;color:#fff}
+.vhover{position:absolute;inset:0;background:rgba(0,0,0,.35);opacity:0;
+  transition:opacity .18s;display:flex;align-items:center;justify-content:center}
+.vcell:hover .vhover{opacity:1}
+.vempty{grid-column:1/-1;text-align:center;padding:48px 20px;color:var(--t3)}
+.vempty .icon{font-size:34px;margin-bottom:10px}
+
+/* ─── Video modal ─── */
+.vmodal-bg{
+  display:none;position:fixed;inset:0;z-index:300;
+  background:rgba(0,0,0,.88);backdrop-filter:blur(10px);
+  align-items:center;justify-content:center;padding:16px;
+}
+.vmodal-bg.open{display:flex;animation:pop .2s ease}
+@keyframes pop{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}
+.vmodal{display:flex;border-radius:18px;overflow:hidden;
+  box-shadow:0 32px 96px rgba(0,0,0,.8),0 0 0 1px rgba(255,255,255,.06)}
+.vplayer{position:relative;width:288px;flex-shrink:0;background:#000}
+.vpinner{position:relative;width:288px;height:512px;overflow:hidden;background:#000}
+.vpvid{width:100%;height:100%;object-fit:cover;display:block}
+.vptop{
+  position:absolute;top:0;inset-x:0;z-index:5;padding:9px 11px;
+  background:linear-gradient(to bottom,rgba(0,0,0,.65),transparent);
+  display:flex;justify-content:space-between;align-items:center;
+}
+.vpbot{
+  position:absolute;bottom:0;inset-x:0;z-index:5;padding:26px 11px 9px;
+  background:linear-gradient(to top,rgba(0,0,0,.85),transparent);
+}
+.vpcap{font-size:11.5px;font-weight:500;line-height:1.4;margin-bottom:5px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.vpdate{font-size:10px;color:rgba(255,255,255,.5)}
+.vpprog{position:absolute;bottom:0;inset-x:0;height:2px;background:rgba(255,255,255,.15);cursor:pointer;z-index:6}
+.vpfill{height:100%;background:var(--pink);transition:width .1s linear}
+.vpplay{position:absolute;inset:0;z-index:4;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.vpc{width:48px;height:48px;border-radius:50%;background:rgba(0,0,0,.45);backdrop-filter:blur(4px);
+  display:flex;align-items:center;justify-content:center;transition:opacity .2s,transform .15s}
+.vpc.gone{opacity:0;transform:scale(.8);pointer-events:none}
+.vpbtn{width:28px;height:28px;border-radius:50%;background:rgba(0,0,0,.5);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;
+  transition:background .14s}
+.vpbtn:hover{background:rgba(0,0,0,.8)}
+
+/* stats panel */
+.vspanel{width:200px;background:var(--s1);border-left:1px solid var(--b1);
+  display:flex;flex-direction:column;padding:16px;height:512px;overflow-y:auto}
+.vsc{display:flex;align-items:center;gap:8px;padding-bottom:12px;
+  border-bottom:1px solid var(--b1);margin-bottom:12px}
+.vscn{font-size:12.5px;font-weight:700}
+.vsch{font-size:10.5px;color:var(--t3)}
+.vsm{display:flex;flex-direction:column;gap:8px;flex:1}
+.vsrow{display:flex;align-items:center;justify-content:space-between}
+.vslab{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--t3)}
+.vsval{font-size:13px;font-weight:700}
+.vshr{border:none;border-top:1px solid var(--b1);margin:3px 0}
+.vseng{
+  background:rgba(37,244,238,.06);border:1px solid rgba(37,244,238,.15);
+  border-radius:8px;padding:10px;text-align:center;
+}
+.vseng-lbl{font-size:9.5px;color:var(--t3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px}
+.vseng-val{font-size:20px;font-weight:900;color:var(--cyan)}
+.vsact{margin-top:10px;padding-top:10px;border-top:1px solid var(--b1);display:flex;flex-direction:column;gap:6px}
+.btntt{display:block;text-align:center;padding:8px;border-radius:8px;
+  font-size:11.5px;font-weight:700;background:var(--pink);color:#fff;
+  transition:background .14s;cursor:pointer;text-decoration:none}
+.btntt:hover{background:#e0253d}
+.btncl{text-align:center;font-size:11.5px;color:var(--t3);cursor:pointer;padding:5px;transition:color .14s}
+.btncl:hover{color:var(--t1)}
+
+@media(max-width:540px){
+  .vmodal{flex-direction:column;border-radius:16px 16px 0 0;max-width:100%}
+  .vmodal-bg{align-items:flex-end;padding:0}
+  .vplayer,.vpinner{width:100%}
+  .vpinner{height:56vw;min-height:260px}
+  .vspanel{width:100%;height:auto;border-left:none;border-top:1px solid var(--b1)}
+}
+
+/* ─── CSV Import modal ─── */
+.csvmodal-bg{display:none;position:fixed;inset:0;z-index:450;background:rgba(0,0,0,.88);
+  backdrop-filter:blur(10px);align-items:center;justify-content:center;padding:16px}
+.csvmodal-bg.open{display:flex;animation:pop .2s ease}
+.csvmodal{background:var(--s1);border:1px solid var(--b2);border-radius:18px;
+  width:480px;max-width:95vw;box-shadow:var(--sh);overflow:hidden}
+.csv-head{padding:20px 22px 16px;border-bottom:1px solid var(--b1);display:flex;align-items:flex-start;gap:10px}
+.csv-icon{font-size:24px;flex-shrink:0;margin-top:2px}
+.csv-head-text h2{font-size:15px;font-weight:800;margin-bottom:3px}
+.csv-head-text p{font-size:11.5px;color:var(--t3);line-height:1.5}
+.csv-close{margin-left:auto;width:26px;height:26px;border-radius:7px;background:var(--s2);
+  border:1px solid var(--b2);color:var(--t3);display:flex;align-items:center;
+  justify-content:center;cursor:pointer;font-size:13px;flex-shrink:0;transition:all .14s}
+.csv-close:hover{background:var(--b1);color:var(--t1)}
+.csv-body{padding:18px 22px}
+.csv-tabs{display:flex;gap:6px;margin-bottom:16px}
+.csv-tab{flex:1;padding:8px;border-radius:8px;font-size:12px;font-weight:600;text-align:center;
+  cursor:pointer;border:1px solid var(--b2);color:var(--t3);background:var(--s2);transition:all .14s}
+.csv-tab.active{background:rgba(254,44,85,.1);color:var(--pink);border-color:rgba(254,44,85,.25)}
+.csv-pane{display:none}
+.csv-pane.active{display:block}
+/* Steps */
+.csv-steps{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
+.csv-step{display:flex;gap:10px;align-items:flex-start}
+.csv-step-num{width:20px;height:20px;border-radius:50%;background:rgba(254,44,85,.15);
+  color:var(--pink);font-size:10px;font-weight:800;display:flex;align-items:center;
+  justify-content:center;flex-shrink:0;margin-top:1px}
+.csv-step-txt{font-size:12px;color:var(--t2);line-height:1.5}
+.csv-step-txt a{color:var(--cyan);text-decoration:none}
+.csv-step-txt a:hover{text-decoration:underline}
+/* Drop zone */
+.csv-drop{
+  border:2px dashed var(--b2);border-radius:10px;padding:28px 16px;text-align:center;
+  cursor:pointer;transition:all .18s;background:var(--s2);margin-bottom:14px;
+}
+.csv-drop:hover,.csv-drop.drag{border-color:var(--pink);background:rgba(254,44,85,.04)}
+.csv-drop-icon{font-size:28px;margin-bottom:8px}
+.csv-drop-txt{font-size:12.5px;font-weight:600;margin-bottom:3px}
+.csv-drop-sub{font-size:11px;color:var(--t3)}
+.csv-drop input[type=file]{display:none}
+/* Manual entry */
+.manual-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.manual-full{grid-column:1/-1}
+.csv-result{font-size:11.5px;color:var(--green);background:rgba(0,212,126,.07);
+  border:1px solid rgba(0,212,126,.2);border-radius:8px;padding:9px 12px;
+  margin-bottom:10px;display:none;line-height:1.5}
+.csv-result.err{color:var(--pink);background:rgba(254,44,85,.07);border-color:rgba(254,44,85,.2)}
+.csv-result.on{display:block}
+.csv-footer{padding:14px 22px;border-top:1px solid var(--b1);display:flex;gap:8px;justify-content:flex-end}
+/* manual account selector */
+.csv-select{width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:8px;
+  padding:8px 12px;color:var(--t1);font-size:13px;font-family:inherit;
+  appearance:none;cursor:pointer;transition:border-color .14s}
+.csv-select:focus{border-color:var(--pink);outline:none}
+
+/* ─── Add client modal ─── */
+.amodal-bg{display:none;position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.82);
+  backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:16px}
+.amodal-bg.open{display:flex;animation:pop .2s ease}
+.amodal{background:var(--s1);border:1px solid var(--b2);border-radius:18px;
+  padding:26px;width:400px;max-width:95vw;box-shadow:var(--sh)}
+.amh{display:flex;align-items:flex-start;margin-bottom:20px}
+.amh-t{flex:1}
+.amh-t h2{font-size:16px;font-weight:800;margin-bottom:3px}
+.amh-t p{font-size:11.5px;color:var(--t3)}
+.am-x{width:26px;height:26px;border-radius:7px;background:var(--s2);border:1px solid var(--b2);
+  color:var(--t3);display:flex;align-items:center;justify-content:center;cursor:pointer;
+  font-size:13px;transition:all .14s}
+.am-x:hover{background:var(--b1);color:var(--t1)}
+.fg{margin-bottom:14px}
+.fl{display:block;font-size:10.5px;font-weight:600;color:var(--t3);
+  text-transform:uppercase;letter-spacing:.09em;margin-bottom:5px}
+.fi{width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:8px;
+  padding:8px 12px;color:var(--t1);font-size:13px;transition:border-color .14s}
+.fi:focus{border-color:var(--pink)}
+.fi::placeholder{color:var(--t3)}
+.fhint{font-size:10.5px;color:var(--t3);margin-top:4px}
+.am-acts{display:flex;gap:8px;margin-top:18px}
+.am-acts .btn{flex:1;justify-content:center;padding:9px}
+.am-loading{display:none;align-items:center;gap:7px;font-size:11.5px;color:var(--cyan);margin-top:10px}
+.am-loading.on{display:flex}
+.am-error{display:none;font-size:11.5px;color:var(--pink);margin-top:9px;
+  padding:8px 11px;background:rgba(254,44,85,.07);border:1px solid rgba(254,44,85,.18);
+  border-radius:8px;line-height:1.5}
+.am-error.on{display:block}
+.spi{width:13px;height:13px;border-radius:50%;border:2px solid var(--b3);
+  border-top-color:var(--cyan);animation:rotate .7s linear infinite;flex-shrink:0}
+
+/* ─── Mobile toggle ─── */
+.mb-toggle{
+  display:none;position:fixed;bottom:20px;right:20px;z-index:200;
+  width:42px;height:42px;border-radius:50%;
+  background:var(--pink);border:none;color:#fff;
+  align-items:center;justify-content:center;
+  box-shadow:0 4px 14px rgba(254,44,85,.4);cursor:pointer;
+}
+@media(max-width:860px){
+  .sidebar{position:fixed;top:0;left:0;z-index:150;transform:translateX(-220px);transition:transform .25s;height:100vh}
+  .sidebar.open{transform:translateX(0);box-shadow:6px 0 28px rgba(0,0,0,.6)}
+  .sb-ov{position:fixed;inset:0;z-index:140;background:rgba(0,0,0,.5);display:none}
+  .sb-ov.on{display:block}
+  .mb-toggle{display:flex}
+  .main{width:100%}
+}
+
+/* ─── Toast ─── */
+.toasts{position:fixed;bottom:22px;right:22px;display:flex;flex-direction:column;gap:7px;z-index:999}
+.tst{
+  background:var(--s1);border:1px solid var(--b2);border-radius:9px;
+  padding:10px 14px;font-size:12px;display:flex;align-items:center;gap:8px;
+  box-shadow:var(--sh);animation:pop .25s ease;max-width:280px;
+}
+.tst.ok{border-left:3px solid var(--green)}
+.tst.err{border-left:3px solid var(--pink)}
+.tst.info{border-left:3px solid var(--cyan)}
+</style>
+</head>
+<body>
+
+<!-- Mobile sidebar overlay -->
+<div class="sb-ov" id="sbOv" onclick="closeSb()"></div>
+
+<!-- ══════ SIDEBAR ══════ -->
+<div class="app">
+<aside class="sidebar" id="sidebar">
+  <div class="sb-logo">
+    <svg viewBox="0 0 200 50" style="width:148px;height:auto" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <text x="1.5" y="40" font-family="'Arial Black',Arial,sans-serif" font-weight="900" font-size="40" fill="#25F4EE" opacity=".55" transform="translate(1.5,0)">HR</text>
+      <text x="1.5" y="40" font-family="'Arial Black',Arial,sans-serif" font-weight="900" font-size="40" fill="#FE2C55" opacity=".55" transform="translate(-1.5,0)">HR</text>
+      <text x="1.5" y="40" font-family="'Arial Black',Arial,sans-serif" font-weight="900" font-size="40" fill="white">HR</text>
+      <text x="60" y="21" font-family="'Arial Black',Arial,sans-serif" font-weight="900" font-size="13" fill="white" letter-spacing="1">HACK REBEL</text>
+      <text x="60" y="38" font-family="Arial,sans-serif" font-weight="700" font-size="10.5" fill="#FE2C55" letter-spacing="4.5">SOCIAL</text>
+    </svg>
+    <div class="sb-tagline">Agency Dashboard</div>
+  </div>
+
+  <nav class="sb-nav">
+    <div class="sb-section">Menu</div>
+    <div class="sb-link active" id="sbDash" onclick="navDash()"><span class="ico">📊</span>Dashboard</div>
+    <div class="sb-link" onclick="openAddModal()"><span class="ico">➕</span>Add Client</div>
+    <div class="sb-link" onclick="openCsvModal()"><span class="ico">📥</span>Import Data</div>
+    <div class="sb-link" onclick="doRefresh()"><span class="ico">🔄</span>Refresh All</div>
+    <div class="sb-section" style="margin-top:8px">Clients</div>
+    <div id="sbClients"></div>
+  </nav>
+
+  <div class="sb-footer">
+    <div style="font-weight:600;color:var(--t2)">Hack Rebel Social</div>
+    <div>TikTok Analytics v2.1</div>
+  </div>
+</aside>
+
+<!-- ══════ MAIN ══════ -->
+<div class="main">
+  <!-- Topbar -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <span class="topbar-title" id="tbTitle">Dashboard</span>
+      <span class="topbar-sub" id="tbSub">All Clients</span>
+    </div>
+    <div class="topbar-right">
+      <div class="live"><div class="live-dot"></div>Live</div>
+      <span id="tbTs" style="font-size:10.5px;color:var(--t3)"></span>
+      <button class="btn btn-ghost btn-sm" onclick="doRefresh()" id="rfBtn">
+        <svg id="rfIco" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>
+        </svg>
+        Refresh
+      </button>
+      <button class="btn btn-ghost btn-sm" onclick="openCsvModal()">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Import Data
+      </button>
+      <button class="btn btn-pink btn-sm" onclick="openAddModal()">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Client
+      </button>
+    </div>
+  </header>
+
+  <!-- Fetch bar -->
+  <div class="fetch-notice hide" id="fetchBar">
+    <svg class="spin" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <path d="M21 12a9 9 0 1 1-9-9 9 9 0 0 1 9 9"/></svg>
+    <span id="fetchTxt">Connecting to TikTok…</span>
+  </div>
+
+  <!-- ── DASHBOARD PAGE ── -->
+  <div id="pageDash" class="content">
+    <div class="kpi-grid" id="kpiGrid"></div>
+    <div class="sec-head">
+      <h2>All Clients</h2>
+      <aside id="secAside">Last 30 days</aside>
+    </div>
+    <div class="cgrid" id="cgrid"></div>
+  </div>
+
+  <!-- ── DETAIL PAGE ── -->
+  <div id="pageDetail" style="display:none">
+    <div class="dpage" id="dpage"></div>
+  </div>
+</div><!-- /main -->
+</div><!-- /app -->
+
+<!-- Mobile toggle -->
+<button class="mb-toggle" onclick="toggleSb()">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+    <line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/>
+  </svg>
+</button>
+
+<!-- ══════ VIDEO MODAL ══════ -->
+<div class="vmodal-bg" id="vmodal" onclick="if(event.target===this)closeVid()">
+  <div class="vmodal">
+    <div class="vplayer">
+      <div class="vpinner">
+        <video id="vvid" class="vpvid" playsinline loop src="" poster=""></video>
+        <div class="vptop">
+          <button class="vpbtn" onclick="closeVid()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+          <button class="vpbtn" id="volBtn" onclick="toggleMute()">
+            <svg id="vOn" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+              <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+            </svg>
+            <svg id="vOff" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" style="display:none">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+              <line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>
+            </svg>
+          </button>
+        </div>
+        <div class="vpplay" onclick="togglePlay()">
+          <div class="vpc" id="playCirc">
+            <svg id="playIco" width="16" height="16" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg>
+            <svg id="pauseIco" width="16" height="16" viewBox="0 0 24 24" fill="white" style="display:none"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+          </div>
+        </div>
+        <div class="vpbot">
+          <div class="vpcap" id="vCap"></div>
+          <div class="vpdate" id="vDate"></div>
+        </div>
+        <div class="vpprog" id="vProg" onclick="seek(event)">
+          <div class="vpfill" id="vFill" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+    <div class="vspanel">
+      <div class="vsc">
+        <div class="av" id="vsAv" style="width:32px;height:32px;font-size:11px"></div>
+        <div><div class="vscn" id="vsNm"></div><div class="vsch" id="vsHd"></div></div>
+      </div>
+      <div class="vsm">
+        <div class="vsrow"><div class="vslab"><span>👁️</span>Views</div><div class="vsval" id="vsVw">—</div></div>
+        <div class="vsrow"><div class="vslab"><span>❤️</span>Likes</div><div class="vsval" id="vsLk">—</div></div>
+        <div class="vsrow"><div class="vslab"><span>💬</span>Comments</div><div class="vsval" id="vsCm">—</div></div>
+        <div class="vsrow"><div class="vslab"><span>🔁</span>Shares</div><div class="vsval" id="vsSh">—</div></div>
+        <hr class="vshr"/>
+        <div class="vseng"><div class="vseng-lbl">Eng. Rate</div><div class="vseng-val" id="vsEng">—</div></div>
+      </div>
+      <div class="vsact">
+        <a class="btntt" id="vsLink" href="#" target="_blank" rel="noopener">View on TikTok ↗</a>
+        <div class="btncl" onclick="closeVid()">Close</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ CSV IMPORT MODAL ══════ -->
+<div class="csvmodal-bg" id="csvmodal" onclick="if(event.target===this)closeCsvModal()">
+  <div class="csvmodal">
+    <div class="csv-head">
+      <div class="csv-icon">📥</div>
+      <div class="csv-head-text">
+        <h2>Import TikTok Data</h2>
+        <p>Import CSV dari TikTok Studio atau masukkan data manual</p>
+      </div>
+      <button class="csv-close" onclick="closeCsvModal()">✕</button>
+    </div>
+    <div class="csv-body">
+      <div class="csv-tabs">
+        <div class="csv-tab active" id="csvTab1" onclick="switchCsvTab(1)">📄 Import CSV</div>
+        <div class="csv-tab" id="csvTab2" onclick="switchCsvTab(2)">✏️ Manual Entry</div>
+        <div class="csv-tab" id="csvTab3" onclick="switchCsvTab(3)">🔗 Cara Export</div>
+      </div>
+
+      <!-- TAB 1: CSV Upload -->
+      <div class="csv-pane active" id="csvPane1">
+        <div class="fg">
+          <label class="fl">Pilih Akun</label>
+          <select class="csv-select" id="csvAccount"></select>
+        </div>
+        <div class="csv-drop" id="csvDrop" onclick="document.getElementById('csvFile').click()"
+          ondragover="event.preventDefault();this.classList.add('drag')"
+          ondragleave="this.classList.remove('drag')"
+          ondrop="handleCsvDrop(event)">
+          <input type="file" id="csvFile" accept=".csv,.txt" onchange="handleCsvFile(this.files[0])"/>
+          <div class="csv-drop-icon">📊</div>
+          <div class="csv-drop-txt">Drag & drop CSV di sini atau klik untuk pilih</div>
+          <div class="csv-drop-sub">Export dari TikTok Studio → Analytics → Download Data</div>
+        </div>
+        <div class="csv-result" id="csvResult"></div>
+      </div>
+
+      <!-- TAB 2: Manual Entry -->
+      <div class="csv-pane" id="csvPane2">
+        <div class="fg">
+          <label class="fl">Pilih Akun</label>
+          <select class="csv-select" id="manualAccount"></select>
+        </div>
+        <div class="manual-grid">
+          <div class="fg" style="margin:0">
+            <label class="fl">Followers</label>
+            <input class="fi" id="mFollowers" type="number" placeholder="e.g. 24800"/>
+          </div>
+          <div class="fg" style="margin:0">
+            <label class="fl">Total Likes</label>
+            <input class="fi" id="mLikes" type="number" placeholder="e.g. 182000"/>
+          </div>
+          <div class="fg" style="margin:0">
+            <label class="fl">Total Videos</label>
+            <input class="fi" id="mVideos" type="number" placeholder="e.g. 93"/>
+          </div>
+          <div class="fg" style="margin:0">
+            <label class="fl">Views (30 hari)</label>
+            <input class="fi" id="mViews" type="number" placeholder="e.g. 150000"/>
+          </div>
+          <div class="fg manual-full" style="margin:0">
+            <label class="fl">Nickname (opsional)</label>
+            <input class="fi" id="mNick" type="text" placeholder="Nama display di TikTok"/>
+          </div>
+        </div>
+        <div class="csv-result" id="manualResult"></div>
+      </div>
+
+      <!-- TAB 3: How to Export -->
+      <div class="csv-pane" id="csvPane3">
+        <div class="csv-steps">
+          <div class="csv-step">
+            <div class="csv-step-num">1</div>
+            <div class="csv-step-txt">Buka <a href="https://www.tiktok.com/tiktokstudio/analytics/overview" target="_blank" rel="noopener">TikTok Studio → Analytics</a> di browser</div>
+          </div>
+          <div class="csv-step">
+            <div class="csv-step-num">2</div>
+            <div class="csv-step-txt">Pilih tab <strong>Overview</strong> dan atur rentang tanggal yang diinginkan</div>
+          </div>
+          <div class="csv-step">
+            <div class="csv-step-num">3</div>
+            <div class="csv-step-txt">Klik tombol <strong>Download data</strong> di pojok kanan atas halaman analytics</div>
+          </div>
+          <div class="csv-step">
+            <div class="csv-step-num">4</div>
+            <div class="csv-step-txt">Pilih <strong>Overview Report</strong> atau <strong>Video Report</strong> → klik Download</div>
+          </div>
+          <div class="csv-step">
+            <div class="csv-step-num">5</div>
+            <div class="csv-step-txt">Kembali ke tab <strong>Import CSV</strong> di atas, pilih akun, lalu upload file CSV-nya</div>
+          </div>
+        </div>
+        <div style="background:rgba(37,244,238,.06);border:1px solid rgba(37,244,238,.15);border-radius:8px;padding:11px 13px;font-size:11.5px;color:var(--t2);line-height:1.6">
+          💡 <strong>Tip:</strong> Dashboard juga bisa import <strong>Video Report</strong> untuk menampilkan statistik per video (views, likes, komentar, shares).
+        </div>
+      </div>
+    </div>
+
+    <div class="csv-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeCsvModal()">Tutup</button>
+      <button class="btn btn-pink btn-sm" id="csvSaveBtn" onclick="saveCsvData()" style="display:none">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+        Simpan Data
+      </button>
+      <button class="btn btn-pink btn-sm" id="manualSaveBtn" onclick="saveManualData()" style="display:none">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+        Simpan Data
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ ADD CLIENT MODAL ══════ -->
+<div class="amodal-bg" id="amodal" onclick="if(event.target===this)closeAddModal()">
+  <div class="amodal">
+    <div class="amh">
+      <div class="amh-t"><h2>Add New Client</h2><p>Enter a TikTok username to track</p></div>
+      <button class="am-x" onclick="closeAddModal()">✕</button>
+    </div>
+    <div class="fg">
+      <label class="fl">TikTok Username</label>
+      <input class="fi" id="inUser" type="text" placeholder="username (without @)" onkeydown="if(event.key==='Enter')doAdd()"/>
+      <div class="fhint">Public accounts only</div>
+    </div>
+    <div class="fg">
+      <label class="fl">Brand / Client Name</label>
+      <input class="fi" id="inName" type="text" placeholder="e.g. Nike Indonesia" onkeydown="if(event.key==='Enter')doAdd()"/>
+    </div>
+    <div class="fg">
+      <label class="fl">Category <span style="color:var(--t3);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+      <input class="fi" id="inCat" type="text" placeholder="Fashion, F&B, Tech…"/>
+    </div>
+    <div class="am-loading" id="amLoad"><div class="spi"></div><span>Fetching TikTok profile…</span></div>
+    <div class="am-error" id="amErr"></div>
+    <div class="am-acts">
+      <button class="btn btn-outline" onclick="closeAddModal()">Cancel</button>
+      <button class="btn btn-pink" onclick="doAdd()">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+        Add & Fetch
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Toasts -->
+<div class="toasts" id="toasts"></div>
+
+<script>
+'use strict';
+// ═══════════════════════════════════════════════════
+//  HACK REBEL SOCIAL — TikTok Dashboard
+//  Real-time fetch from TikTok public pages via proxy
+// ═══════════════════════════════════════════════════
+
+// ──────────────────────────────────────────
+//  CONFIG
+// ──────────────────────────────────────────
+const CACHE_TTL   = 30 * 60 * 1000; // 30 min
+const CLIENTS_KEY = 'hr2_clients';
+const DATA_KEY    = 'hr2_data';
+const COLORS      = ['#FE2C55','#7C5CFC','#25F4EE','#FF9500','#00D47E','#F97316','#A855F7'];
+
+// ── Vercel API endpoint ──────────────────
+// Ganti dengan URL Vercel app kamu setelah deploy
+// Contoh: 'https://hackrebel-dashboard.vercel.app'
+const VERCEL_API = 'https://hackrebel-dashboard.vercel.app';
+
+// ──────────────────────────────────────────
+//  DEFAULT CLIENTS (preset to user's accounts)
+// ──────────────────────────────────────────
+const DEFAULTS = [
+  { id:'elfs_active',              username:'elfs_active',              name:'Elfs Active',           category:'Activewear', color:'#FE2C55' },
+  { id:'shumijapan',               username:'shumijapan',               name:'Shumi Japan',            category:'Lifestyle',  color:'#7C5CFC' },
+  { id:'kamlaijakarta',            username:'kamlaijakarta',            name:'Kamlai Jakarta',         category:'Fashion',    color:'#25F4EE' },
+  { id:'pieraspropolinseofficial', username:'pieraspropolinseofficial', name:'Pieras Propolinse',      category:'Beauty',     color:'#FF9500' },
+  { id:'brait.idn',                username:'brait.idn',                name:'Brait IDN',              category:'Lifestyle',  color:'#00D47E' },
+  { id:'m2000.outdoor',            username:'m2000.outdoor',            name:'M2000 Outdoor',          category:'Outdoor',    color:'#F97316' },
+  { id:'elfs_fits',                username:'elfs_fits',                name:'Elfs Fits',              category:'Fashion',    color:'#A855F7' },
+  { id:'alamsarideltamas',         username:'alamsarideltamas',         name:'Alam Sari Deltamas',     category:'Property',   color:'#FE2C55' },
+];
+
+// ──────────────────────────────────────────
+//  MOCK / SEED DATA
+//  Shown instantly while real data loads
+// ──────────────────────────────────────────
+const MOCK = {
+  elfs_active:              { followers:24800,  totalLikes:182000, videoCount:93 },
+  shumijapan:               { followers:18200,  totalLikes:96000,  videoCount:61 },
+  kamlaijakarta:            { followers:31500,  totalLikes:210000, videoCount:118 },
+  pieraspropolinseofficial: { followers:9400,   totalLikes:54000,  videoCount:44 },
+  'brait.idn':              { followers:15800,  totalLikes:88000,  videoCount:72 },
+  'm2000.outdoor':          { followers:12300,  totalLikes:67000,  videoCount:55 },
+  elfs_fits:                { followers:7600,   totalLikes:41000,  videoCount:38 },
+  alamsarideltamas:         { followers:5200,   totalLikes:29000,  videoCount:26 },
+};
+
+// ──────────────────────────────────────────
+//  STATE
+// ──────────────────────────────────────────
+let clients   = [];
+let dataStore = {};   // username → {profile, videos, ts, source}
+let activeCid = null;
+let fetching  = false;
+
+// ──────────────────────────────────────────
+//  STORAGE + REMOTE DATA.JSON SYNC
+// ──────────────────────────────────────────
+
+// Detect base URL for data.json (works on GitHub Pages & local)
+const DATA_JSON_URL = (() => {
+  const loc = window.location.href;
+  // If opened as file://, try sibling data.json
+  if (loc.startsWith('file://')) {
+    return loc.replace(/\/[^/]*$/, '/data.json');
+  }
+  // On GitHub Pages or any server, same directory
+  return './data.json';
+})();
+
+// Status connect per akun dari Vercel API
+let accountStatuses = {};
+
+async function loadRemoteData() {
+  // ── Try Vercel API first (TikTok Business API data) ──────────────
+  if (VERCEL_API) {
+    try {
+      const r = await fetch(`${VERCEL_API}/api/data`, { cache: 'no-store' });
+      if (r.ok) {
+        const json = await r.json();
+        if (json.clients?.length) {
+          clients = json.clients;
+          saveClients();
+        }
+        if (json.data) {
+          Object.assign(dataStore, json.data);
+          saveData();
+        }
+        if (json.statuses) {
+          accountStatuses = json.statuses;
+        }
+        const syncTime = new Date(json.lastSync).toLocaleString('id-ID', {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+        document.getElementById('tbTs').textContent = 'API Sync ' + syncTime;
+        return true;
+      }
+    } catch (e) {
+      console.warn('Vercel API unavailable, falling back…', e.message);
+    }
+  }
+
+  // ── Fallback: data.json (GitHub Pages static file) ───────────────
+  try {
+    const r = await fetch(DATA_JSON_URL + '?t=' + Date.now(), { cache: 'no-store' });
+    if (!r.ok) return false;
+    const json = await r.json();
+    if (json.clients?.length) { clients = json.clients; saveClients(); }
+    if (json.data) { Object.assign(dataStore, json.data); saveData(); }
+    if (json.lastSync) {
+      document.getElementById('tbTs').textContent = 'Synced ' + new Date(json.lastSync).toLocaleString('id-ID', {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+    }
+    return true;
+  } catch { return false; }
+}
+
+function loadStore() {
+  try {
+    const sc = localStorage.getItem(CLIENTS_KEY);
+    clients  = sc ? JSON.parse(sc) : null;
+    if (!clients || !clients.length) {
+      clients = DEFAULTS.map(d => ({...d}));
+      saveClients();
+    }
+  } catch { clients = DEFAULTS.map(d => ({...d})); }
+
+  try {
+    const sd  = localStorage.getItem(DATA_KEY);
+    dataStore = sd ? JSON.parse(sd) : {};
+  } catch { dataStore = {}; }
+}
+
+function saveClients() { try { localStorage.setItem(CLIENTS_KEY, JSON.stringify(clients)); } catch {} }
+function saveData()    { try { localStorage.setItem(DATA_KEY, JSON.stringify(dataStore)); } catch {} }
+
+function isFresh(username) {
+  const e = dataStore[username];
+  return e && e.ts && (Date.now() - e.ts) < CACHE_TTL;
+}
+
+function getData(username) {
+  return dataStore[username] || null;
+}
+
+function setData(username, profile, videos, source = 'live') {
+  dataStore[username] = { profile, videos: videos || [], ts: Date.now(), source };
+  saveData();
+}
+
+// ──────────────────────────────────────────
+//  FORMATTERS
+// ──────────────────────────────────────────
+const fmt = n => {
+  n = Number(n);
+  if (!n || isNaN(n)) return '—';
+  if (n >= 1e9) return (n/1e9).toFixed(1) + 'B';
+  if (n >= 1e6) return (n/1e6).toFixed(1) + 'M';
+  if (n >= 1e3) return (n/1e3).toFixed(1) + 'K';
+  return '' + n;
+};
+const fmtDate = s => {
+  if (!s) return '—';
+  try { return new Date(s).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}); }
+  catch { return '—'; }
+};
+const daysDiff = s => s ? Math.floor((Date.now() - new Date(s)) / 86400000) : null;
+const initials = n => (n||'?').split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+const timeAgo  = ts => {
+  const s = Math.floor((Date.now()-ts)/1000);
+  if (s < 60) return 'just now';
+  if (s < 3600) return Math.floor(s/60) + 'm ago';
+  if (s < 86400) return Math.floor(s/3600) + 'h ago';
+  return Math.floor(s/86400) + 'd ago';
+};
+const esc = s => String(s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;').replace(/</g,'&lt;');
+
+// ──────────────────────────────────────────
+//  TIKTOK DATA FETCH
+// ──────────────────────────────────────────
+const PROXIES = [
+  u => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+  u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+  u => `https://thingproxy.freeboard.io/fetch/${encodeURIComponent(u)}`,
+];
+
+async function fetchProxy(url, ms = 9000) {
+  for (const fn of PROXIES) {
+    try {
+      const ctrl = new AbortController();
+      const t    = setTimeout(() => ctrl.abort(), ms);
+      const r    = await fetch(fn(url), {
+        signal: ctrl.signal,
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible)' }
+      });
+      clearTimeout(t);
+      if (r.ok) return await r.text();
+    } catch {}
+  }
+  return null;
+}
+
+function parsePageData(html) {
+  // Try __UNIVERSAL_DATA_FOR_REHYDRATION__
+  let m = html.match(/<script\s+id="__UNIVERSAL_DATA_FOR_REHYDRATION__"[^>]*>([\s\S]*?)<\/script>/);
+  if (m) { try { return JSON.parse(m[1]); } catch {} }
+  // Try SIGI_STATE
+  m = html.match(/<script\s+id="SIGI_STATE"[^>]*>([\s\S]*?)<\/script>/);
+  if (m) { try { return JSON.parse(m[1]); } catch {} }
+  // Try __NEXT_DATA__
+  m = html.match(/<script\s+id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
+  if (m) { try { return JSON.parse(m[1]); } catch {} }
+  return null;
+}
+
+function extractUser(data, uname) {
+  if (!data) return null;
+  try {
+    // Path 1: webapp.user-detail
+    const ud1 = data['webapp.user-detail']?.userInfo;
+    if (ud1) return buildProfile(ud1.user, ud1.stats);
+    // Path 2: UserPage
+    const ud2 = data['UserPage']?.userInfo;
+    if (ud2) return buildProfile(ud2.user, ud2.stats);
+    // Path 3: UserModule
+    const um = data['UserModule'];
+    if (um) {
+      const user  = um.users?.[uname] || Object.values(um.users||{})[0];
+      const stats = um.stats?.[uname] || Object.values(um.stats||{})[0];
+      if (user) return buildProfile(user, stats);
+    }
+    // Path 4: SSR user data
+    const seo = data['seo.abtest'];
+    if (seo?.canonicalUserInfo) return buildProfile(seo.canonicalUserInfo, seo.canonicalUserInfo.stats);
+  } catch {}
+  return null;
+}
+
+function buildProfile(user, stats) {
+  if (!user) return null;
+  return {
+    nickname:    user.nickname || user.uniqueId || '',
+    handle:      '@' + (user.uniqueId || ''),
+    avatarThumb: user.avatarThumb || user.avatarMedium || user.avatarLarger || '',
+    verified:    !!user.verified,
+    private:     !!user.privateAccount,
+    bio:         user.signature || '',
+    followers:   +(stats?.followerCount  || user.followerCount  || 0),
+    following:   +(stats?.followingCount || user.followingCount || 0),
+    totalLikes:  +(stats?.heartCount     || user.heartCount     || 0),
+    videoCount:  +(stats?.videoCount     || user.videoCount     || 0),
+  };
+}
+
+function extractVideos(data) {
+  try {
+    const sources = [
+      data['webapp.user-detail']?.itemList,
+      data['ItemModule'],
+      data?.props?.pageProps?.itemList,
+    ];
+    for (const src of sources) {
+      if (!src) continue;
+      const arr = Array.isArray(src) ? src : Object.values(src);
+      if (arr.length) {
+        return arr.slice(0, 20).map(v => ({
+          id:       v.id || v.itemId || '',
+          caption:  v.desc || '',
+          createTime: v.createTime ? new Date(v.createTime*1000).toISOString() : null,
+          thumbnail: v.video?.cover || v.video?.originCover || '',
+          videoUrl:  v.video?.playAddr || '',
+          views:    +(v.stats?.playCount    || 0),
+          likes:    +(v.stats?.diggCount    || 0),
+          comments: +(v.stats?.commentCount || 0),
+          shares:   +(v.stats?.shareCount   || 0),
+        })).filter(v => v.id);
+      }
+    }
+  } catch {}
+  return [];
+}
+
+// Try to extract simple numbers from HTML if JSON fails
+function fallbackMeta(html, uname) {
+  try {
+    // meta description often has "followers" info
+    const fol = html.match(/(\d[\d,]+)\s*(?:Followers|followers)/);
+    const lik = html.match(/(\d[\d,]+)\s*(?:Likes|likes)/);
+    const vds = html.match(/(\d+)\s*(?:Videos|videos)/);
+    const nick = html.match(/<title[^>]*>([^<]+)<\/title>/);
+    if (fol || lik) {
+      return {
+        nickname:   nick?.[1]?.split('(@')[0]?.trim() || uname,
+        handle:     '@' + uname,
+        avatarThumb:'',
+        verified:   false,
+        private:    false,
+        bio:        '',
+        followers:  fol ? parseInt(fol[1].replace(/,/g,'')) : 0,
+        following:  0,
+        totalLikes: lik ? parseInt(lik[1].replace(/,/g,'')) : 0,
+        videoCount: vds ? parseInt(vds[1]) : 0,
+      };
+    }
+  } catch {}
+  return null;
+}
+
+async function fetchTikTok(username) {
+  const uname = username.replace('@','').trim();
+  const url   = `https://www.tiktok.com/@${uname}`;
+
+  const html = await fetchProxy(url);
+  if (!html) throw new Error('Could not reach TikTok. Check your internet connection.');
+
+  const pageData = parsePageData(html);
+  let profile    = extractUser(pageData, uname);
+  let videos     = extractVideos(pageData);
+
+  if (!profile) {
+    profile = fallbackMeta(html, uname);
+  }
+
+  if (!profile) {
+    throw new Error('Could not parse TikTok data. The page may have been blocked or the account may be private.');
+  }
+
+  return { profile, videos };
+}
+
+// ──────────────────────────────────────────
+//  STATS HELPERS
+// ──────────────────────────────────────────
+function computeStats(username) {
+  const entry = getData(username);
+  const mock  = MOCK[username] || {};
+
+  if (!entry) {
+    // Return mock data while loading
+    return {
+      profile:     { nickname: username, handle: '@'+username, avatarThumb:'', verified:false, bio:'', followers: mock.followers||0, following:0, totalLikes: mock.totalLikes||0, videoCount: mock.videoCount||0 },
+      videos:      [],
+      followers:   mock.followers  || 0,
+      totalLikes:  mock.totalLikes || 0,
+      videoCount:  mock.videoCount || 0,
+      engRate:     '—',
+      lastDate:    null,
+      daysOut:     null,
+      warn:        false,
+      source:      'mock',
+    };
+  }
+
+  const { profile, videos, source } = entry;
+  const cutoff = new Date(); cutoff.setDate(cutoff.getDate()-30);
+  const recent = (videos||[]).filter(v => v.createTime && new Date(v.createTime) >= cutoff);
+
+  const rViews    = recent.reduce((s,v)=>s+v.views,0);
+  const rLikes    = recent.reduce((s,v)=>s+v.likes,0);
+  const rComments = recent.reduce((s,v)=>s+v.comments,0);
+  const rShares   = recent.reduce((s,v)=>s+v.shares,0);
+
+  let engRate = '—';
+  if (rViews > 0) {
+    engRate = (((rLikes+rComments+rShares)/rViews)*100).toFixed(1);
+  } else if (profile.followers > 0 && profile.totalLikes > 0) {
+    // Fallback: likes/followers ratio as engagement proxy
+    engRate = ((profile.totalLikes / profile.followers) * 100).toFixed(1);
+  }
+
+  const sorted   = [...(videos||[])].sort((a,b) => new Date(b.createTime)-new Date(a.createTime));
+  const lastDate = sorted[0]?.createTime || null;
+  const daysOut  = daysDiff(lastDate);
+
+  return {
+    profile,
+    videos:    sorted,
+    recent,
+    followers: profile.followers  || mock.followers  || 0,
+    totalLikes:profile.totalLikes || mock.totalLikes || 0,
+    videoCount:profile.videoCount || mock.videoCount || 0,
+    engRate,
+    lastDate,
+    daysOut,
+    warn:      daysOut !== null && daysOut >= 2,
+    source:    source || 'live',
+    ts:        entry.ts,
+  };
+}
+
+// ──────────────────────────────────────────
+//  RENDER: DASHBOARD
+// ──────────────────────────────────────────
+function renderDash() {
+  // KPI summary
+  let totFollowers=0, totLikes=0, totVideos=0, warns=0;
+  clients.forEach(c => {
+    const st = computeStats(c.username);
+    totFollowers += st.followers;
+    totLikes     += st.totalLikes;
+    totVideos    += st.videoCount;
+    if (st.warn) warns++;
+  });
+
+  document.getElementById('kpiGrid').innerHTML = [
+    { label:'Total Clients',   value: clients.length, sub:'accounts tracked',    accent:'var(--pink)' },
+    { label:'Total Followers', value: fmt(totFollowers), sub:'across all accounts', accent:'var(--cyan)' },
+    { label:'Total Likes',     value: fmt(totLikes),    sub:'all-time combined',   accent:'var(--purple)' },
+    { label:'Needs Attention', value: warns,
+      sub: warns > 0 ? warns+' inactive client(s)' : 'All clients active',
+      accent: warns > 0 ? 'var(--pink)' : 'var(--green)' },
+  ].map(k => `
+    <div class="kpi-card" style="--accent:${k.accent}">
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-value" style="color:${k.accent}">${k.value}</div>
+      <div class="kpi-sub">${k.sub}</div>
+    </div>`).join('');
+
+  // Client grid
+  document.getElementById('cgrid').innerHTML = clients.map(c => {
+    const st = computeStats(c.username);
+    const acStatus = accountStatuses[c.username];
+    const isConnected = acStatus?.connected;
+    const connectUrl  = acStatus?.connectUrl || `${VERCEL_API}/api/connect?account=${c.username}`;
+
+    const statusBadge = st.source === 'api'
+      ? `<span class="dstatus live" style="background:rgba(0,212,126,.1);color:var(--green);border-color:rgba(0,212,126,.2)">🔗 API Live</span>`
+      : st.source === 'live'
+        ? `<span class="dstatus live">● Live</span>`
+        : st.source === 'csv'
+          ? `<span class="dstatus live" style="background:rgba(124,92,252,.1);color:var(--purple);border-color:rgba(124,92,252,.25)">📄 CSV</span>`
+        : st.source === 'manual'
+          ? `<span class="dstatus stale" style="background:rgba(37,244,238,.08);color:var(--cyan);border-color:rgba(37,244,238,.2)">✏️ Manual</span>`
+        : st.source === 'mock'
+          ? `<span class="dstatus mock">⟳ Loading…</span>`
+          : `<span class="dstatus stale">● Cached</span>`;
+
+    return `
+      <div class="ccard${st.source==='mock'?' loading':''}" onclick="${st.source!=='mock'?`openDetail('${c.id}')`:''}">
+        ${st.warn ? `<div class="w-ribbon">⚠ ${st.daysOut}d NO POST</div>` : ''}
+        <div class="ch">
+          <div class="av" style="background:${c.color}">${initials(c.name)}</div>
+          <div class="ci">
+            <div class="cname">${c.name}</div>
+            <div class="chandle">@${c.username}</div>
+            ${statusBadge}
+          </div>
+          <div class="cbadge">${c.category||'—'}</div>
+        </div>
+        <hr class="cdivider"/>
+        <div class="cstats">
+          <div>
+            <div class="cslabel">Followers</div>
+            <div class="csval">${st.source==='mock'&&!st.followers
+              ? '<span style="color:var(--t3);font-size:11px">loading…</span>'
+              : fmt(st.followers)}</div>
+          </div>
+          <div>
+            <div class="cslabel">Likes</div>
+            <div class="csval">${st.source==='mock'&&!st.totalLikes
+              ? '<span style="color:var(--t3);font-size:11px">loading…</span>'
+              : fmt(st.totalLikes)}</div>
+          </div>
+          <div>
+            <div class="cslabel">Eng. Rate</div>
+            <div class="csval" style="color:var(--cyan)">${st.engRate==='—'?'—':st.engRate+'%'}</div>
+          </div>
+        </div>
+        <div class="cfooter">
+          <div class="clast${st.warn?' warn':''}">
+            ${st.lastDate ? 'Last: ' + fmtDate(st.lastDate) : st.source==='mock' ? 'Fetching…' : 'No recent posts'}
+          </div>
+          ${!isConnected && VERCEL_API
+            ? `<a href="${connectUrl}" target="_blank" rel="noopener"
+                style="font-size:10px;font-weight:700;color:var(--pink);
+                  background:rgba(254,44,85,.1);border:1px solid rgba(254,44,85,.2);
+                  padding:3px 8px;border-radius:6px;text-decoration:none;white-space:nowrap"
+                onclick="event.stopPropagation()">🔗 Connect</a>`
+            : `<div class="carrow">${st.source!=='mock'?'→':''}</div>`
+          }
+        </div>
+      </div>`;
+  }).join('');
+
+  // Sidebar clients
+  renderSidebarClients();
+
+  // Timestamps
+  const tss = clients.map(c => getData(c.username)?.ts).filter(Boolean);
+  if (tss.length) {
+    const oldest = Math.min(...tss);
+    document.getElementById('tbTs').textContent = 'Updated ' + timeAgo(oldest);
+  }
+}
+
+function renderSidebarClients() {
+  document.getElementById('sbClients').innerHTML = clients.map(c => {
+    const st = computeStats(c.username);
+    return `
+      <div class="sb-link${activeCid===c.id?' active':''}" onclick="openDetail('${c.id}')">
+        <div class="sb-dot" style="background:${c.color}"></div>
+        <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.name}</span>
+        ${st.warn ? '<div class="sb-warn-dot"></div>' : ''}
+      </div>`;
+  }).join('');
+}
+
+// ──────────────────────────────────────────
+//  RENDER: DETAIL
+// ──────────────────────────────────────────
+function renderDetail(cid) {
+  const c = clients.find(x => x.id === cid);
+  if (!c) return;
+  const st = computeStats(c.username);
+  const p  = st.profile;
+  const vids = st.videos || [];
+
+  const videoGrid = vids.length > 0
+    ? vids.map(v => {
+        const th = v.thumbnail || `https://picsum.photos/seed/${v.id||Math.random()}/360/640`;
+        return `
+          <div class="vcell" onclick="openVid('${esc(v.id)}','${esc(c.id)}')">
+            <img src="${esc(th)}" loading="lazy" alt=""
+              onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22360%22 height=%22640%22><rect fill=%22%23111%22 width=%22360%22 height=%22640%22/><text x=%22180%22 y=%22320%22 text-anchor=%22middle%22 fill=%22%23333%22 font-size=%2250%22>🎬</text></svg>'"/>
+            <div class="vbot">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <span class="vviews">${fmt(v.views)}</span>
+            </div>
+            <div class="vhover"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg></div>
+          </div>`;
+      }).join('')
+    : `<div class="vempty">
+        <div class="icon">🎬</div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:4px">Video data unavailable</div>
+        <div style="font-size:11px;margin-bottom:14px">TikTok may have blocked the data request.</div>
+        <a href="https://www.tiktok.com/@${c.username}" target="_blank" rel="noopener"
+          class="btn btn-pink btn-sm" style="display:inline-flex;text-decoration:none">
+          View profile on TikTok ↗
+        </a>
+      </div>`;
+
+  document.getElementById('dpage').innerHTML = `
+    <div class="dback">
+      <button class="btn btn-outline btn-sm" onclick="navDash()">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+        Back
+      </button>
+      <span style="font-size:13px;font-weight:600">@${c.username}</span>
+      ${st.warn?`<span style="font-size:9.5px;font-weight:700;background:rgba(254,44,85,.1);border:1px solid rgba(254,44,85,.2);color:var(--pink);padding:2px 7px;border-radius:20px">⚠ ${st.daysOut}d no post</span>`:''}
+      <div style="flex:1"></div>
+      <a href="https://www.tiktok.com/@${c.username}" target="_blank" rel="noopener"
+        class="btn btn-outline btn-sm" style="text-decoration:none">TikTok ↗</a>
+    </div>
+
+    <div class="profile-wrap">
+      <div class="profile-av" style="background:${c.color}">${initials(c.name)}</div>
+      <div class="pnick">${p.nickname||c.name} ${p.verified?'<span style="font-size:11px;color:var(--cyan)">✓</span>':''}</div>
+      <div class="phandle">@${c.username}</div>
+      <div class="ptag">${c.category||'—'}</div>
+      <div class="pstats">
+        <div class="psi"><div class="psv">${fmt(p.followers)}</div><div class="psl">Followers</div></div>
+        <div class="psi"><div class="psv">${fmt(p.following)}</div><div class="psl">Following</div></div>
+        <div class="psi"><div class="psv" style="color:var(--cyan)">${st.engRate==='—'?'—':st.engRate+'%'}</div><div class="psl">Eng. Rate</div></div>
+      </div>
+    </div>
+
+    ${st.warn?`<div class="wbar">⚠️ No post detected in ${st.daysOut} days — needs attention!</div>`:''}
+
+    <div class="kstrip">
+      <div class="ksi"><div class="ksv">${fmt(p.followers)}</div><div class="ksl">Followers</div></div>
+      <div class="ksi"><div class="ksv">${fmt(p.totalLikes)}</div><div class="ksl">Total Likes</div></div>
+      <div class="ksi"><div class="ksv">${p.videoCount||'—'}</div><div class="ksl">Videos</div></div>
+      <div class="ksi"><div class="ksv" style="${st.warn?'color:var(--pink)':''}">${st.daysOut!=null?st.daysOut+'d':'—'}</div><div class="ksl">Days Since Post</div></div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:3px"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Videos
+      </div>
+      <div class="tab">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:3px"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Analytics
+      </div>
+    </div>
+
+    <div class="vgrid">${videoGrid}</div>
+    <div style="height:40px"></div>
+  `;
+}
+
+// ──────────────────────────────────────────
+//  VIDEO MODAL
+// ──────────────────────────────────────────
+const vvid     = document.getElementById('vvid');
+const vFill    = document.getElementById('vFill');
+const playCirc = document.getElementById('playCirc');
+const playIco  = document.getElementById('playIco');
+const pauseIco = document.getElementById('pauseIco');
+let muted      = false;
+let raf        = null;
+
+function openVid(videoId, cid) {
+  const c  = clients.find(x => x.id === cid);
+  const st = c ? computeStats(c.username) : null;
+  if (!st) return;
+  const v = (st.videos||[]).find(x => x.id === videoId);
+  if (!v || !c) return;
+
+  document.getElementById('vsAv').style.background = c.color;
+  document.getElementById('vsAv').textContent = initials(c.name);
+  document.getElementById('vsNm').textContent  = c.name;
+  document.getElementById('vsHd').textContent  = '@' + c.username;
+  document.getElementById('vsVw').textContent  = fmt(v.views);
+  document.getElementById('vsLk').textContent  = fmt(v.likes);
+  document.getElementById('vsCm').textContent  = fmt(v.comments);
+  document.getElementById('vsSh').textContent  = fmt(v.shares);
+  document.getElementById('vCap').textContent  = v.caption || '(no caption)';
+  document.getElementById('vDate').textContent = fmtDate(v.createTime);
+  document.getElementById('vsLink').href = `https://www.tiktok.com/@${c.username}/video/${v.id}`;
+
+  const eng = v.views > 0
+    ? (((v.likes+v.comments+v.shares)/v.views)*100).toFixed(1) + '%'
+    : '—';
+  document.getElementById('vsEng').textContent = eng;
+
+  vvid.poster = v.thumbnail || '';
+  if (v.videoUrl) {
+    vvid.src    = v.videoUrl;
+    vvid.muted  = muted;
+    vvid.play().then(()=>setPlaying(true)).catch(()=>setPlaying(false));
+  } else {
+    vvid.src = '';
+    setPlaying(false);
+  }
+
+  document.getElementById('vmodal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  startRaf();
+}
+
+function closeVid() {
+  vvid.pause(); vvid.src = '';
+  document.getElementById('vmodal').classList.remove('open');
+  document.body.style.overflow = '';
+  cancelAnimationFrame(raf);
+  vFill.style.width = '0%';
+  setPlaying(false);
+}
+
+function setPlaying(p) {
+  playIco.style.display  = p ? 'none' : 'block';
+  pauseIco.style.display = p ? 'block' : 'none';
+  playCirc.classList.toggle('gone', p);
+}
+
+function togglePlay() {
+  if (vvid.paused) vvid.play().then(()=>setPlaying(true));
+  else { vvid.pause(); setPlaying(false); }
+}
+
+function toggleMute() {
+  muted = !muted;
+  vvid.muted = muted;
+  document.getElementById('vOn').style.display  = muted ? 'none' : 'block';
+  document.getElementById('vOff').style.display = muted ? 'block' : 'none';
+}
+
+function seek(e) {
+  const r = document.getElementById('vProg').getBoundingClientRect();
+  vvid.currentTime = ((e.clientX-r.left)/r.width) * (vvid.duration||0);
+}
+
+function startRaf() {
+  cancelAnimationFrame(raf);
+  const tick = () => {
+    if (vvid.duration) vFill.style.width = (vvid.currentTime/vvid.duration*100)+'%';
+    raf = requestAnimationFrame(tick);
+  };
+  raf = requestAnimationFrame(tick);
+}
+vvid.addEventListener('ended', () => setPlaying(false));
+
+// ──────────────────────────────────────────
+//  ADD CLIENT
+// ──────────────────────────────────────────
+function openAddModal() {
+  document.getElementById('amodal').classList.add('open');
+  closeSb();
+  setTimeout(()=>document.getElementById('inUser').focus(), 100);
+}
+function closeAddModal() {
+  document.getElementById('amodal').classList.remove('open');
+  ['inUser','inName','inCat'].forEach(id => { document.getElementById(id).value = ''; });
+  document.getElementById('amLoad').classList.remove('on');
+  document.getElementById('amErr').classList.remove('on');
+}
+
+async function doAdd() {
+  const uraw  = document.getElementById('inUser').value.trim().replace('@','');
+  const name  = document.getElementById('inName').value.trim();
+  const cat   = document.getElementById('inCat').value.trim();
+  if (!uraw) { showAmErr('Please enter a TikTok username.'); return; }
+  if (clients.find(c=>c.username===uraw)) { showAmErr('@'+uraw+' is already in your dashboard.'); return; }
+
+  document.getElementById('amLoad').classList.add('on');
+  document.getElementById('amErr').classList.remove('on');
+
+  // Add immediately with mock state
+  const color  = COLORS[clients.length % COLORS.length];
+  const client = { id:uraw, username:uraw, name:name||uraw, category:cat||'—', color };
+  clients.push(client);
+  saveClients();
+  closeAddModal();
+  renderDash();
+  toast('info', '⟳ Adding ' + (name||uraw) + '…');
+
+  try {
+    const { profile, videos } = await fetchTikTok(uraw);
+    setData(uraw, profile, videos, 'live');
+    if (name) client.name = name;
+    else if (profile.nickname) client.name = profile.nickname;
+    saveClients();
+    renderDash();
+    if (activeCid === uraw) renderDetail(uraw);
+    toast('ok', '✅ ' + client.name + ' added!');
+  } catch (e) {
+    toast('err', '⚠️ Could not fetch ' + uraw + ': ' + e.message);
+  }
+}
+
+function showAmErr(msg) {
+  const el = document.getElementById('amErr');
+  el.textContent = msg;
+  el.classList.add('on');
+  document.getElementById('amLoad').classList.remove('on');
+}
+
+// ──────────────────────────────────────────
+//  REFRESH
+// ──────────────────────────────────────────
+async function doRefresh(force = true) {
+  if (fetching) return;
+  fetching = true;
+
+  const rfIco = document.getElementById('rfIco');
+  rfIco.classList.add('spin');
+  document.getElementById('fetchBar').classList.remove('hide');
+
+  const toFetch = force ? clients : clients.filter(c => !isFresh(c.username));
+  let done = 0;
+
+  const updateBar = (msg) => {
+    document.getElementById('fetchTxt').textContent = msg || `Fetching… (${done}/${toFetch.length})`;
+  };
+
+  updateBar();
+
+  for (const c of toFetch) {
+    updateBar(`Fetching @${c.username}… (${done+1}/${toFetch.length})`);
+    try {
+      const { profile, videos } = await fetchTikTok(c.username);
+      setData(c.username, profile, videos, 'live');
+      // Update display name if not manually set
+      const dc = DEFAULTS.find(d => d.id === c.id);
+      if (profile.nickname && (!dc || c.name === dc.name)) {
+        // keep the user's label, just cache data
+      }
+      toast('ok', `✅ ${c.name} updated`);
+    } catch (e) {
+      toast('err', `⚠️ ${c.name}: ${e.message}`);
+    }
+    done++;
+    renderDash();
+    if (activeCid) renderDetail(activeCid);
+    // small pause between requests
+    if (done < toFetch.length) await new Promise(r => setTimeout(r, 500));
+  }
+
+  rfIco.classList.remove('spin');
+  document.getElementById('fetchBar').classList.add('hide');
+  fetching = false;
+
+  const now = new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  document.getElementById('tbTs').textContent = 'Updated at ' + now;
+}
+
+// ──────────────────────────────────────────
+//  ROUTING
+// ──────────────────────────────────────────
+function navDash() {
+  document.getElementById('pageDash').style.display   = 'block';
+  document.getElementById('pageDetail').style.display = 'none';
+  document.getElementById('tbTitle').textContent      = 'Dashboard';
+  document.getElementById('tbSub').textContent        = 'All Clients';
+  document.getElementById('sbDash').classList.add('active');
+  activeCid = null;
+  renderDash();
+  history.pushState({p:'dash'}, '', '#');
+  closeSb();
+}
+
+function openDetail(cid) {
+  const c = clients.find(x => x.id === cid);
+  if (!c) return;
+  activeCid = cid;
+  document.getElementById('pageDash').style.display   = 'none';
+  document.getElementById('pageDetail').style.display = 'block';
+  document.getElementById('tbTitle').textContent      = c.name;
+  document.getElementById('tbSub').textContent        = '@' + c.username;
+  document.getElementById('sbDash').classList.remove('active');
+  renderDetail(cid);
+  renderSidebarClients();
+  history.pushState({p:'detail',cid}, '', '#' + cid);
+  closeSb();
+}
+
+window.addEventListener('popstate', e => {
+  const h = location.hash.replace('#','');
+  if (h && clients.find(c=>c.id===h)) openDetail(h);
+  else navDash();
+});
+
+// ──────────────────────────────────────────
+//  SIDEBAR (mobile)
+// ──────────────────────────────────────────
+function toggleSb()  { const s=document.getElementById('sidebar'); s.classList.toggle('open'); document.getElementById('sbOv').classList.toggle('on',s.classList.contains('open')); }
+function closeSb()   { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sbOv').classList.remove('on'); }
+
+// ──────────────────────────────────────────
+//  TOAST
+// ──────────────────────────────────────────
+function toast(type, msg) {
+  const w = document.getElementById('toasts');
+  const el = document.createElement('div');
+  el.className = 'tst ' + type;
+  el.textContent = msg;
+  w.appendChild(el);
+  setTimeout(() => { el.style.opacity='0'; el.style.transition='opacity .3s'; setTimeout(()=>el.remove(),300); }, 3500);
+}
+
+// ──────────────────────────────────────────
+//  CSV IMPORT MODAL
+// ──────────────────────────────────────────
+let parsedCsvData = null;
+let csvTabActive  = 1;
+
+function openCsvModal() {
+  // Populate account selectors
+  const opts = clients.map(c => `<option value="${c.username}">${c.name} (@${c.username})</option>`).join('');
+  document.getElementById('csvAccount').innerHTML    = opts;
+  document.getElementById('manualAccount').innerHTML = opts;
+
+  // Pre-fill manual if data exists
+  const firstC = clients[0];
+  if (firstC) prefillManual(firstC.username);
+
+  document.getElementById('csvAccount').addEventListener('change', function(){ resetCsvResult(); });
+  document.getElementById('manualAccount').addEventListener('change', function(){ prefillManual(this.value); });
+
+  parsedCsvData = null;
+  document.getElementById('csvResult').className    = 'csv-result';
+  document.getElementById('manualResult').className = 'csv-result';
+  document.getElementById('csvSaveBtn').style.display   = 'none';
+  document.getElementById('manualSaveBtn').style.display = 'block';
+  switchCsvTab(1);
+  document.getElementById('csvmodal').classList.add('open');
+  closeSb();
+}
+
+function closeCsvModal() {
+  document.getElementById('csvmodal').classList.remove('open');
+  parsedCsvData = null;
+}
+
+function switchCsvTab(n) {
+  csvTabActive = n;
+  [1,2,3].forEach(i => {
+    document.getElementById('csvTab'+i).classList.toggle('active', i===n);
+    document.getElementById('csvPane'+i).classList.toggle('active', i===n);
+  });
+  document.getElementById('csvSaveBtn').style.display   = n===1 ? (parsedCsvData?'block':'none') : 'none';
+  document.getElementById('manualSaveBtn').style.display = n===2 ? 'block' : 'none';
+}
+
+function resetCsvResult() {
+  parsedCsvData = null;
+  document.getElementById('csvResult').className = 'csv-result';
+  document.getElementById('csvSaveBtn').style.display = 'none';
+}
+
+function prefillManual(username) {
+  const st = computeStats(username);
+  if (st && st.source !== 'mock') {
+    document.getElementById('mFollowers').value = st.followers || '';
+    document.getElementById('mLikes').value     = st.totalLikes || '';
+    document.getElementById('mVideos').value    = st.videoCount || '';
+    document.getElementById('mNick').value      = st.profile?.nickname || '';
+    document.getElementById('mViews').value     = '';
+  } else {
+    ['mFollowers','mLikes','mVideos','mNick','mViews'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+  }
+}
+
+function handleCsvDrop(e) {
+  e.preventDefault();
+  document.getElementById('csvDrop').classList.remove('drag');
+  const file = e.dataTransfer?.files?.[0];
+  if (file) handleCsvFile(file);
+}
+
+function handleCsvFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => parseCsvContent(e.target.result, file.name);
+  reader.readAsText(file);
+}
+
+function parseCsvContent(text, filename) {
+  const username = document.getElementById('csvAccount').value;
+  const res      = document.getElementById('csvResult');
+
+  try {
+    const lines = text.trim().split(/\r?\n/).filter(l => l.trim());
+    if (lines.length < 2) { showCsvErr('File CSV kosong atau tidak valid.'); return; }
+
+    const header = lines[0].toLowerCase();
+    let parsed   = null;
+
+    // ── TikTok Studio Overview Report ──
+    // Headers like: Date,New followers,...,Video views,Likes,Comments,Shares
+    if (header.includes('follower') || header.includes('video views')) {
+      parsed = parseOverviewCsv(lines, username);
+    }
+    // ── TikTok Studio Video Report ──
+    // Headers like: Video title,Views,Likes,Comments,Shares,...
+    else if (header.includes('video title') || header.includes('views') && header.includes('likes')) {
+      parsed = parseVideoCsv(lines, username);
+    }
+    // ── Generic CSV with numbers ──
+    else {
+      parsed = parseGenericCsv(lines, username);
+    }
+
+    if (!parsed) { showCsvErr('Format CSV tidak dikenali. Coba export dari TikTok Studio → Analytics → Download data.'); return; }
+
+    parsedCsvData = { ...parsed, username };
+    res.textContent = `✅ Berhasil parse "${filename}":\n` +
+      (parsed.followers  ? `  • Followers: ${fmt(parsed.followers)}\n`  : '') +
+      (parsed.totalLikes ? `  • Total Likes: ${fmt(parsed.totalLikes)}\n` : '') +
+      (parsed.videoCount ? `  • Videos: ${parsed.videoCount}\n`          : '') +
+      (parsed.videos?.length ? `  • ${parsed.videos.length} video ditemukan\n` : '') +
+      `\nKlik "Simpan Data" untuk update dashboard.`;
+    res.className = 'csv-result on';
+    document.getElementById('csvSaveBtn').style.display = 'block';
+  } catch(e) {
+    showCsvErr('Gagal parse CSV: ' + e.message);
+  }
+}
+
+function parseOverviewCsv(lines, username) {
+  const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/"/g,''));
+  const rows    = lines.slice(1).map(l => {
+    const vals = l.split(',').map(v => v.trim().replace(/"/g,''));
+    const obj  = {};
+    headers.forEach((h,i) => obj[h] = vals[i]);
+    return obj;
+  });
+
+  // Aggregate totals across date range
+  let totalViews = 0, totalLikes = 0, totalFollowers = 0;
+  let newFollowers = 0;
+
+  rows.forEach(r => {
+    const views = parseInt(String(r['video views']||r['views']||r['video view']||'0').replace(/,/g,'')) || 0;
+    const likes = parseInt(String(r['likes']||'0').replace(/,/g,'')) || 0;
+    const fol   = parseInt(String(r['new followers']||r['followers']||'0').replace(/,/g,'')) || 0;
+    totalViews     += views;
+    totalLikes     += likes;
+    newFollowers   += fol;
+  });
+
+  // Try to get total followers from last row (cumulative)
+  const lastRow = rows[rows.length-1];
+  const totalFol = parseInt(String(lastRow?.['total followers']||lastRow?.['followers']||'0').replace(/,/g,'')) || newFollowers;
+
+  return {
+    followers:  totalFol   || newFollowers,
+    totalLikes: totalLikes,
+    videoCount: 0,
+    recentViews: totalViews,
+    source:     'csv',
+  };
+}
+
+function parseVideoCsv(lines, username) {
+  const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/"/g,''));
+  const videos  = lines.slice(1).map((l, i) => {
+    const vals = l.split(',').map(v => v.trim().replace(/"/g,''));
+    const obj  = {};
+    headers.forEach((h,j) => obj[h] = vals[j]);
+
+    const views    = parseInt(String(obj['views']||obj['video views']||'0').replace(/,/g,''))    || 0;
+    const likes    = parseInt(String(obj['likes']||'0').replace(/,/g,''))                         || 0;
+    const comments = parseInt(String(obj['comments']||obj['comment']||'0').replace(/,/g,''))      || 0;
+    const shares   = parseInt(String(obj['shares']||obj['share']||'0').replace(/,/g,''))           || 0;
+    const caption  = obj['video title'] || obj['title'] || '';
+    const dateStr  = obj['posted time'] || obj['date'] || '';
+
+    return {
+      id:         'csv_' + i,
+      caption,
+      createTime: dateStr ? new Date(dateStr).toISOString() : null,
+      thumbnail:  '',
+      videoUrl:   '',
+      views, likes, comments, shares,
+    };
+  }).filter(v => v.views > 0 || v.caption);
+
+  const totalViews = videos.reduce((s,v)=>s+v.views,0);
+  const totalLikes = videos.reduce((s,v)=>s+v.likes,0);
+
+  return {
+    followers:  0,
+    totalLikes,
+    videoCount: videos.length,
+    videos,
+    source:     'csv',
+  };
+}
+
+function parseGenericCsv(lines, username) {
+  // Try to find any numeric columns that look like social metrics
+  const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/"/g,''));
+  const row1    = lines[1]?.split(',').map(v => parseInt(v.replace(/[^0-9]/g,''))||0) || [];
+
+  let followers = 0, likes = 0, videos = 0;
+  headers.forEach((h, i) => {
+    if (/follower/.test(h)) followers = row1[i] || followers;
+    if (/like|heart/.test(h)) likes    = row1[i] || likes;
+    if (/video/.test(h))      videos   = row1[i] || videos;
+  });
+
+  if (!followers && !likes) return null;
+  return { followers, totalLikes: likes, videoCount: videos, source: 'csv' };
+}
+
+function showCsvErr(msg) {
+  const res = document.getElementById('csvResult');
+  res.textContent = '❌ ' + msg;
+  res.className = 'csv-result err on';
+  document.getElementById('csvSaveBtn').style.display = 'none';
+}
+
+function saveCsvData() {
+  if (!parsedCsvData) return;
+  const { username, followers, totalLikes, videoCount, videos, recentViews } = parsedCsvData;
+  const client  = clients.find(c => c.username === username);
+  if (!client) return;
+
+  const existing = getData(username);
+  const profile = {
+    ...(existing?.profile || {}),
+    nickname:   existing?.profile?.nickname || client.name,
+    handle:     '@' + username,
+    avatarThumb:'',
+    verified:   false,
+    private:    false,
+    bio:        '',
+    followers:  followers  || existing?.profile?.followers  || 0,
+    following:  existing?.profile?.following || 0,
+    totalLikes: totalLikes || existing?.profile?.totalLikes || 0,
+    videoCount: videoCount || existing?.profile?.videoCount || 0,
+  };
+
+  const mergedVideos = videos?.length ? videos : (existing?.videos || []);
+  setData(username, profile, mergedVideos, 'csv');
+
+  closeCsvModal();
+  renderDash();
+  if (activeCid === username) renderDetail(username);
+  toast('ok', `✅ Data CSV ${client.name} berhasil diimport!`);
+}
+
+function saveManualData() {
+  const username   = document.getElementById('manualAccount').value;
+  const followers  = parseInt(document.getElementById('mFollowers').value) || 0;
+  const totalLikes = parseInt(document.getElementById('mLikes').value)     || 0;
+  const videoCount = parseInt(document.getElementById('mVideos').value)    || 0;
+  const nickname   = document.getElementById('mNick').value.trim();
+
+  if (!followers && !totalLikes) {
+    const r = document.getElementById('manualResult');
+    r.textContent = '⚠️ Masukkan minimal Followers atau Total Likes.';
+    r.className = 'csv-result err on';
+    return;
+  }
+
+  const client  = clients.find(c => c.username === username);
+  const existing = getData(username);
+  const profile = {
+    ...(existing?.profile || {}),
+    nickname:   nickname || existing?.profile?.nickname || client?.name || username,
+    handle:     '@' + username,
+    avatarThumb:'',
+    verified:   false,
+    private:    false,
+    bio:        '',
+    followers,
+    following:  existing?.profile?.following || 0,
+    totalLikes,
+    videoCount,
+  };
+
+  setData(username, profile, existing?.videos || [], 'manual');
+  closeCsvModal();
+  renderDash();
+  if (activeCid === username) renderDetail(username);
+  toast('ok', `✅ Data ${client?.name||username} disimpan!`);
+}
+
+// ──────────────────────────────────────────
+//  KEYBOARD
+// ──────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    if (document.getElementById('vmodal').classList.contains('open'))  closeVid();
+    if (document.getElementById('amodal').classList.contains('open'))  closeAddModal();
+    if (document.getElementById('csvmodal').classList.contains('open')) closeCsvModal();
+  }
+  if (e.key === ' ' && document.getElementById('vmodal').classList.contains('open')) {
+    e.preventDefault(); togglePlay();
+  }
+  if ((e.metaKey||e.ctrlKey) && e.key === 'k') { e.preventDefault(); openAddModal(); }
+});
+
+// ──────────────────────────────────────────
+//  INIT
+// ──────────────────────────────────────────
+loadStore();
+renderDash();  // ← renders immediately with mock/cached data (never empty!)
+
+// Handle direct hash on page load
+const initHash = location.hash.replace('#','');
+if (initHash && clients.find(c => c.id === initHash)) {
+  openDetail(initHash);
+}
+
+// Load remote data.json first (shared team data), then fallback to proxy fetch
+(async () => {
+  const remoteLoaded = await loadRemoteData();
+  if (remoteLoaded) {
+    renderDash();
+    if (activeCid) renderDetail(activeCid);
+    toast('info', '✅ Data tim berhasil dimuat');
+  } else {
+    // No remote data.json → fallback to individual proxy fetch
+    setTimeout(() => doRefresh(false), 300);
+  }
+})();
+</script>
+</body>
+</html>
