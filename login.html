@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Sign In — Hack Rebel Social</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#000;--s1:#0a0a0a;--s2:#111;
+  --b1:#1c1c1c;--b2:#252525;--b3:#303030;
+  --t1:#fff;--t2:#999;--t3:#555;
+  --pink:#FE2C55;--cyan:#25F4EE;
+}
+html,body{
+  font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif;
+  background:var(--bg);color:var(--t1);min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+  display:flex;align-items:center;justify-content:center;
+  padding:24px;
+}
+.card{
+  width:100%;max-width:400px;
+  background:var(--s1);
+  border:1px solid var(--b2);
+  border-radius:20px;
+  padding:40px 36px;
+}
+.logo{display:flex;align-items:center;gap:12px;margin-bottom:36px}
+.logo-box{
+  width:44px;height:44px;
+  background:linear-gradient(135deg,var(--pink),#ff6b6b);
+  border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:900;color:#fff;font-size:16px;
+  flex-shrink:0;
+}
+.logo-text{font-size:17px;font-weight:700;color:var(--t1);line-height:1.2}
+.logo-sub{font-size:11px;color:var(--t3);margin-top:2px}
+h1{font-size:22px;font-weight:700;color:var(--t1);margin-bottom:6px}
+.subtitle{font-size:13px;color:var(--t2);margin-bottom:28px}
+.field{margin-bottom:16px}
+label{display:block;font-size:12px;font-weight:600;color:var(--t2);margin-bottom:6px;letter-spacing:.02em}
+input{
+  width:100%;
+  background:var(--b1);
+  border:1px solid var(--b2);
+  border-radius:10px;
+  padding:11px 14px;
+  font-size:14px;color:var(--t1);
+  outline:none;
+  transition:border-color .15s;
+}
+input::placeholder{color:var(--t3)}
+input:focus{border-color:var(--pink)}
+.btn{
+  width:100%;margin-top:8px;
+  background:var(--pink);
+  color:#fff;
+  border:none;border-radius:10px;
+  padding:12px;
+  font-size:14px;font-weight:700;
+  cursor:pointer;
+  transition:opacity .15s,transform .1s;
+}
+.btn:hover{opacity:.88}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.error{
+  display:none;
+  background:rgba(254,44,85,.1);
+  border:1px solid rgba(254,44,85,.3);
+  border-radius:8px;
+  padding:10px 14px;
+  font-size:13px;color:var(--pink);
+  margin-bottom:16px;
+}
+.error.show{display:block}
+.footer{
+  margin-top:28px;
+  text-align:center;
+  font-size:12px;color:var(--t3);
+}
+.footer a{color:var(--t3);text-decoration:none}
+.footer a:hover{color:var(--t2)}
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:
+    linear-gradient(rgba(254,44,85,.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(254,44,85,.03) 1px, transparent 1px);
+  background-size:40px 40px;
+  pointer-events:none;
+}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">
+    <div class="logo-box">HR</div>
+    <div>
+      <div class="logo-text">Hack Rebel Social</div>
+      <div class="logo-sub">TikTok Analytics Dashboard</div>
+    </div>
+  </div>
+  <h1>Welcome back</h1>
+  <p class="subtitle">Sign in to access your analytics dashboard</p>
+  <div class="error" id="errMsg"></div>
+  <form id="loginForm" onsubmit="doLogin(event)">
+    <div class="field">
+      <label for="email">Email</label>
+      <input type="email" id="email" placeholder="you@hackrebel.com" autocomplete="email" required/>
+    </div>
+    <div class="field">
+      <label for="password">Password</label>
+      <input type="password" id="password" placeholder="\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022" autocomplete="current-password" required/>
+    </div>
+    <button class="btn" type="submit" id="submitBtn">Sign in</button>
+  </form>
+  <div class="footer">
+    <a href="/privacy.html">Privacy Policy</a> &nbsp;\u00b7&nbsp;
+    <a href="/terms.html">Terms of Service</a>
+  </div>
+</div>
+<script>
+(function() {
+  const token = localStorage.getItem('hr_token');
+  if (token) {
+    fetch('/api/me', { headers: { Authorization: 'Bearer ' + token } })
+      .then(r => { if (r.ok) window.location.href = '/'; })
+      .catch(() => {});
+  }
+})();
+async function doLogin(e) {
+  e.preventDefault();
+  const btn = document.getElementById('submitBtn');
+  const errMsg = document.getElementById('errMsg');
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+  btn.disabled = true;
+  btn.textContent = 'Signing in\u2026';
+  errMsg.classList.remove('show');
+  try {
+    const res = await fetch('/api/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      errMsg.textContent = data.error || 'Login failed. Try again.';
+      errMsg.classList.add('show');
+      btn.disabled = false;
+      btn.textContent = 'Sign in';
+      return;
+    }
+    localStorage.setItem('hr_token', data.token);
+    localStorage.setItem('hr_user', JSON.stringify({ name: data.name, email: data.email }));
+    const next = new URLSearchParams(location.search).get('next') || '/';
+    window.location.href = next;
+  } catch (err) {
+    errMsg.textContent = 'Network error. Please try again.';
+    errMsg.classList.add('show');
+    btn.disabled = false;
+    btn.textContent = 'Sign in';
+  }
+}
+</script>
+</body>
+</html>
