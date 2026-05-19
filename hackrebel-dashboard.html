@@ -451,12 +451,19 @@ input{font-family:inherit;outline:none}
   </nav>
 
   <div class="sb-footer">
-    <div style="font-weight:600;color:var(--t2)">Hack Rebel Social</div>
-    <div>TikTok Analytics v2.1</div>
-    <div style="margin-top:8px;display:flex;gap:10px;font-size:10px">
-      <a href="/privacy.html" target="_blank" style="color:var(--t3);text-decoration:none;transition:.15s" onmouseover="this.style.color='var(--teal)'" onmouseout="this.style.color='var(--t3)'">Privacy Policy</a>
+    <div id="sbUser" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div>
+        <div style="font-weight:600;color:var(--t2);font-size:12px" id="sbUserName">Hack Rebel Social</div>
+        <div style="font-size:10px;color:var(--t3)" id="sbUserEmail">TikTok Analytics v2.1</div>
+      </div>
+      <button onclick="doLogout()" title="Sign out" style="background:none;border:none;cursor:pointer;padding:5px;border-radius:6px;color:var(--t3);font-size:12px;transition:all .14s" onmouseover="this.style.color='var(--pink)';this.style.background='rgba(254,44,85,.08)'" onmouseout="this.style.color='var(--t3)';this.style.background='none'">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+    </div>
+    <div style="display:flex;gap:10px;font-size:10px">
+      <a href="/privacy.html" target="_blank" style="color:var(--t3);text-decoration:none;transition:.15s" onmouseover="this.style.color='var(--cyan)'" onmouseout="this.style.color='var(--t3)'">Privacy</a>
       <span style="color:var(--b2)">·</span>
-      <a href="/terms.html" target="_blank" style="color:var(--t3);text-decoration:none;transition:.15s" onmouseover="this.style.color='var(--teal)'" onmouseout="this.style.color='var(--t3)'">Terms of Service</a>
+      <a href="/terms.html" target="_blank" style="color:var(--t3);text-decoration:none;transition:.15s" onmouseover="this.style.color='var(--cyan)'" onmouseout="this.style.color='var(--t3)'">Terms</a>
     </div>
   </div>
 </aside>
@@ -729,6 +736,41 @@ input{font-family:inherit;outline:none}
 //  HACK REBEL SOCIAL — TikTok Dashboard
 //  Real-time fetch from TikTok public pages via proxy
 // ═══════════════════════════════════════════════════
+
+// ──────────────────────────────────────────
+//  AUTH GUARD — redirect to login if not authenticated
+// ──────────────────────────────────────────
+(function() {
+  const token = localStorage.getItem('hr_token');
+  if (!token) {
+    window.location.href = '/login.html?next=' + encodeURIComponent(location.pathname + location.search + location.hash);
+    throw new Error('Not authenticated');
+  }
+  // Async server-side verification (non-blocking)
+  fetch('/api/me', { headers: { Authorization: 'Bearer ' + token } })
+    .then(r => {
+      if (!r.ok) {
+        localStorage.removeItem('hr_token');
+        localStorage.removeItem('hr_user');
+        window.location.href = '/login.html';
+      }
+    })
+    .catch(() => {}); // ignore network errors, let user stay
+})();
+
+async function doLogout() {
+  const token = localStorage.getItem('hr_token');
+  if (token) {
+    try { await fetch('/api/logout', { method: 'POST', headers: { Authorization: 'Bearer ' + token } }); } catch {}
+  }
+  localStorage.removeItem('hr_token');
+  localStorage.removeItem('hr_user');
+  window.location.href = '/login.html';
+}
+
+function getUser() {
+  try { return JSON.parse(localStorage.getItem('hr_user') || '{}'); } catch { return {}; }
+}
 
 // ──────────────────────────────────────────
 //  CONFIG
@@ -1865,6 +1907,13 @@ document.addEventListener('keydown', e => {
 // ──────────────────────────────────────────
 loadStore();
 renderDash();  // ← renders immediately with mock/cached data (never empty!)
+
+// Populate user info in sidebar
+(function() {
+  const u = getUser();
+  if (u.name) document.getElementById('sbUserName').textContent = u.name;
+  if (u.email) document.getElementById('sbUserEmail').textContent = u.email;
+})();
 
 // Handle direct hash on page load
 const initHash = location.hash.replace('#','');
