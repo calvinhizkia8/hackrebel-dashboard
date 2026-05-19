@@ -101,8 +101,9 @@ input{font-family:inherit;outline:none}
 @keyframes rotate{to{transform:rotate(360deg)}}
 
 /* ─── Summary cards ─── */
-.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:22px}
-@media(max-width:720px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
+.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:22px}
+@media(max-width:900px){.kpi-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:600px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
 .kpi-card{
   background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);
   padding:14px 16px;position:relative;overflow:hidden;
@@ -168,6 +169,18 @@ input{font-family:inherit;outline:none}
 .clast.warn{color:var(--pink);font-weight:600}
 .carrow{font-size:11px;color:var(--b3);transition:color .14s}
 .ccard:hover .carrow{color:var(--t3)}
+
+/* remove account button */
+.ccard-remove{
+  position:absolute;top:10px;left:10px;z-index:5;
+  width:24px;height:24px;border-radius:6px;
+  background:rgba(254,44,85,.0);border:none;
+  color:transparent;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .18s;
+}
+.ccard:hover .ccard-remove{background:rgba(254,44,85,.12);color:var(--pink)}
+.ccard-remove:hover{background:rgba(254,44,85,.25) !important;transform:scale(1.1)}
 
 /* data status badge */
 .dstatus{
@@ -443,7 +456,7 @@ input{font-family:inherit;outline:none}
   <nav class="sb-nav">
     <div class="sb-section">Menu</div>
     <div class="sb-link active" id="sbDash" onclick="navDash()"><span class="ico">📊</span>Dashboard</div>
-    <div class="sb-link" onclick="openAddModal()"><span class="ico">➕</span>Add Client</div>
+    <div class="sb-link" onclick="openAddModal()"><span class="ico">➕</span>Add Account</div>
     <div class="sb-link" onclick="openCsvModal()"><span class="ico">📥</span>Import Data</div>
     <div class="sb-link" onclick="doRefresh()"><span class="ico">🔄</span>Refresh All</div>
     <div class="sb-section" style="margin-top:8px">Clients</div>
@@ -474,7 +487,7 @@ input{font-family:inherit;outline:none}
   <header class="topbar">
     <div class="topbar-left">
       <span class="topbar-title" id="tbTitle">Dashboard</span>
-      <span class="topbar-sub" id="tbSub">All Clients</span>
+      <span class="topbar-sub" id="tbSub">All Accounts</span>
     </div>
     <div class="topbar-right">
       <div class="live"><div class="live-dot"></div>Live</div>
@@ -491,7 +504,7 @@ input{font-family:inherit;outline:none}
       </button>
       <button class="btn btn-pink btn-sm" onclick="openAddModal()">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        Add Client
+        Add Account
       </button>
     </div>
   </header>
@@ -507,7 +520,7 @@ input{font-family:inherit;outline:none}
   <div id="pageDash" class="content">
     <div class="kpi-grid" id="kpiGrid"></div>
     <div class="sec-head">
-      <h2>All Clients</h2>
+      <h2>All Accounts</h2>
       <aside id="secAside">Last 30 days</aside>
     </div>
     <div class="cgrid" id="cgrid"></div>
@@ -699,7 +712,7 @@ input{font-family:inherit;outline:none}
 <div class="amodal-bg" id="amodal" onclick="if(event.target===this)closeAddModal()">
   <div class="amodal">
     <div class="amh">
-      <div class="amh-t"><h2>Add New Client</h2><p>Enter a TikTok username to track</p></div>
+      <div class="amh-t"><h2>Add New Account</h2><p>Enter a TikTok username to track</p></div>
       <button class="am-x" onclick="closeAddModal()">✕</button>
     </div>
     <div class="fg">
@@ -1159,21 +1172,23 @@ function computeStats(username) {
 // ──────────────────────────────────────────
 function renderDash() {
   // KPI summary
-  let totFollowers=0, totLikes=0, totVideos=0, warns=0;
+  let totFollowers=0, totLikes=0, totVideos=0, warns=0, postsThisMonth=0;
   clients.forEach(c => {
     const st = computeStats(c.username);
-    totFollowers += st.followers;
-    totLikes     += st.totalLikes;
-    totVideos    += st.videoCount;
+    totFollowers   += st.followers;
+    totLikes       += st.totalLikes;
+    totVideos      += st.videoCount;
+    postsThisMonth += (st.recent||[]).length;
     if (st.warn) warns++;
   });
 
   document.getElementById('kpiGrid').innerHTML = [
-    { label:'Total Clients',   value: clients.length, sub:'accounts tracked',    accent:'var(--pink)' },
-    { label:'Total Followers', value: fmt(totFollowers), sub:'across all accounts', accent:'var(--cyan)' },
-    { label:'Total Likes',     value: fmt(totLikes),    sub:'all-time combined',   accent:'var(--purple)' },
+    { label:'Total Accounts',  value: clients.length,    sub:'accounts tracked',         accent:'var(--pink)' },
+    { label:'Total Followers', value: fmt(totFollowers), sub:'across all accounts',       accent:'var(--cyan)' },
+    { label:'Total Likes',     value: fmt(totLikes),     sub:'all-time combined',         accent:'var(--purple)' },
+    { label:'Posts This Month',value: postsThisMonth,    sub:'content last 30 days',      accent:'var(--amber)' },
     { label:'Needs Attention', value: warns,
-      sub: warns > 0 ? warns+' inactive client(s)' : 'All clients active',
+      sub: warns > 0 ? warns+' inactive account(s)' : 'All accounts active',
       accent: warns > 0 ? 'var(--pink)' : 'var(--green)' },
   ].map(k => `
     <div class="kpi-card" style="--accent:${k.accent}">
@@ -1201,9 +1216,16 @@ function renderDash() {
           ? `<span class="dstatus mock">⟳ Loading…</span>`
           : `<span class="dstatus stale">● Cached</span>`;
 
+    const postsThisMonthCount = (st.recent||[]).length;
     return `
       <div class="ccard${st.source==='mock'?' loading':''}" onclick="${st.source!=='mock'?`openDetail('${c.id}')`:''}">
         ${st.warn ? `<div class="w-ribbon">⚠ ${st.daysOut}d NO POST</div>` : ''}
+        <button class="ccard-remove" title="Remove account" onclick="event.stopPropagation();removeClient('${c.id}')">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+            <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+          </svg>
+        </button>
         <div class="ch">
           <div class="av" style="background:${c.color}">${initials(c.name)}</div>
           <div class="ci">
@@ -1214,7 +1236,7 @@ function renderDash() {
           <div class="cbadge">${c.category||'—'}</div>
         </div>
         <hr class="cdivider"/>
-        <div class="cstats">
+        <div class="cstats" style="grid-template-columns:repeat(4,1fr)">
           <div>
             <div class="cslabel">Followers</div>
             <div class="csval">${st.source==='mock'&&!st.followers
@@ -1226,6 +1248,10 @@ function renderDash() {
             <div class="csval">${st.source==='mock'&&!st.totalLikes
               ? '<span style="color:var(--t3);font-size:11px">loading…</span>'
               : fmt(st.totalLikes)}</div>
+          </div>
+          <div>
+            <div class="cslabel">Posts/Mo</div>
+            <div class="csval" style="color:var(--amber)">${st.source==='mock'?'—':postsThisMonthCount}</div>
           </div>
           <div>
             <div class="cslabel">Eng. Rate</div>
@@ -1503,6 +1529,29 @@ function showAmErr(msg) {
 }
 
 // ──────────────────────────────────────────
+//  REMOVE ACCOUNT
+// ──────────────────────────────────────────
+function removeClient(cid) {
+  const c = clients.find(x => x.id === cid);
+  if (!c) return;
+  if (!confirm(`Remove "${c.name}" (@${c.username}) from dashboard?\n\nThis will delete all stored data for this account.`)) return;
+
+  // Remove from clients list
+  clients = clients.filter(x => x.id !== cid);
+  saveClients();
+
+  // Remove cached data
+  delete dataStore[c.username];
+  saveData();
+
+  // If currently viewing this account, go back to dashboard
+  if (activeCid === cid) navDash();
+  else renderDash();
+
+  toast('ok', `🗑️ ${c.name} removed`);
+}
+
+// ──────────────────────────────────────────
 //  REFRESH
 // ──────────────────────────────────────────
 async function doRefresh(force = true) {
@@ -1558,7 +1607,7 @@ function navDash() {
   document.getElementById('pageDash').style.display   = 'block';
   document.getElementById('pageDetail').style.display = 'none';
   document.getElementById('tbTitle').textContent      = 'Dashboard';
-  document.getElementById('tbSub').textContent        = 'All Clients';
+  document.getElementById('tbSub').textContent        = 'All Accounts';
   document.getElementById('sbDash').classList.add('active');
   activeCid = null;
   renderDash();
