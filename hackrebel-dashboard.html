@@ -861,7 +861,10 @@ async function loadRemoteData() {
       if (r.ok) {
         const json = await r.json();
         if (json.clients?.length) {
-          clients = json.clients;
+          // Merge: keep locally-added clients, add/update from remote
+          const remoteIds = new Set(json.clients.map(c => c.id));
+          const localOnly = clients.filter(c => !remoteIds.has(c.id));
+          clients = [...json.clients, ...localOnly];
           saveClients();
         }
         if (json.data) {
@@ -885,7 +888,13 @@ async function loadRemoteData() {
     const r = await fetch(DATA_JSON_URL + '?t=' + Date.now(), { cache: 'no-store' });
     if (!r.ok) return false;
     const json = await r.json();
-    if (json.clients?.length) { clients = json.clients; saveClients(); }
+    if (json.clients?.length) {
+      // Merge: keep locally-added clients
+      const remoteIds = new Set(json.clients.map(c => c.id));
+      const localOnly = clients.filter(c => !remoteIds.has(c.id));
+      clients = [...json.clients, ...localOnly];
+      saveClients();
+    }
     if (json.data) { Object.assign(dataStore, json.data); saveData(); }
     if (json.lastSync) {
       document.getElementById('tbTs').textContent = 'Synced ' + new Date(json.lastSync).toLocaleString('id-ID', {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
@@ -1489,10 +1498,13 @@ function closeAddModal() {
 }
 
 async function doAdd() {
-  const uraw  = document.getElementById('inUser').value.trim().replace('@','');
+  let raw = document.getElementById('inUser').value.trim();
+  // Accept full TikTok URLs — extract just the username
+  const urlMatch = raw.match(/tiktok\.com\/@?([A-Za-z0-9_.]+)/);
+  const uraw = urlMatch ? urlMatch[1] : raw.replace(/^@/,'').trim();
   const name  = document.getElementById('inName').value.trim();
   const cat   = document.getElementById('inCat').value.trim();
-  if (!uraw) { showAmErr('Please enter a TikTok username.'); return; }
+  if (!uraw) { showAmErr('Please enter a TikTok username or profile link.'); return; }
   if (clients.find(c=>c.username===uraw)) { showAmErr('@'+uraw+' is already in your dashboard.'); return; }
 
   document.getElementById('amLoad').classList.add('on');
