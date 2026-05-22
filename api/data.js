@@ -59,7 +59,7 @@ export default async function handler(req, res) {
     });
 
     return res.status(200).json({
-      clients:  CLIENTS,
+            // clients omitted — managed locally in user's localStorage
       data,
       statuses,
       lastSync: Date.now(),
