@@ -804,6 +804,7 @@ function getUser() {
 const CACHE_TTL   = 30 * 60 * 1000; // 30 min
 const CLIENTS_KEY = 'hr2_clients';
 const DATA_KEY    = 'hr2_data';
+const DELETED_KEY = 'hr2_deleted'; // set of client IDs explicitly removed by user
 const COLORS      = ['#FE2C55','#7C5CFC','#25F4EE','#FF9500','#00D47E','#F97316','#A855F7'];
 
 // ── Vercel API endpoint ──────────────────
@@ -874,10 +875,12 @@ async function loadRemoteData() {
       if (r.ok) {
         const json = await r.json();
         if (json.clients?.length) {
-          // Merge: keep locally-added clients, add/update from remote
-          const remoteIds = new Set(json.clients.map(c => c.id));
-          const localOnly = clients.filter(c => !remoteIds.has(c.id));
-          clients = [...json.clients, ...localOnly];
+          // Merge: keep locally-added clients, skip explicitly deleted ones
+          const deletedIds = loadDeletedIds();
+          const remoteClients = json.clients.filter(c => !deletedIds.has(c.id));
+          const remoteIds = new Set(remoteClients.map(c => c.id));
+          const localOnly = clients.filter(c => !remoteIds.has(c.id) && !deletedIds.has(c.id));
+          clients = [...remoteClients, ...localOnly];
           saveClients();
         }
         if (json.data) {
@@ -902,10 +905,12 @@ async function loadRemoteData() {
     if (!r.ok) return false;
     const json = await r.json();
     if (json.clients?.length) {
-      // Merge: keep locally-added clients
-      const remoteIds = new Set(json.clients.map(c => c.id));
-      const localOnly = clients.filter(c => !remoteIds.has(c.id));
-      clients = [...json.clients, ...localOnly];
+      // Merge: keep locally-added clients, skip explicitly deleted ones
+      const deletedIds = loadDeletedIds();
+      const remoteClients = json.clients.filter(c => !deletedIds.has(c.id));
+      const remoteIds = new Set(remoteClients.map(c => c.id));
+      const localOnly = clients.filter(c => !remoteIds.has(c.id) && !deletedIds.has(c.id));
+      clients = [...remoteClients, ...localOnly];
       saveClients();
     }
     if (json.data) { Object.assign(dataStore, json.data); saveData(); }
@@ -934,6 +939,8 @@ function loadStore() {
 
 function saveClients() { try { localStorage.setItem(CLIENTS_KEY, JSON.stringify(clients)); } catch {} }
 function saveData()    { try { localStorage.setItem(DATA_KEY, JSON.stringify(dataStore)); } catch {} }
+function loadDeletedIds() { try { return new Set(JSON.parse(localStorage.getItem(DELETED_KEY) || '[]')); } catch { return new Set(); } }
+function saveDeletedId(id) { try { const s = loadDeletedIds(); s.add(id); localStorage.setItem(DELETED_KEY, JSON.stringify([...s])); } catch {} }
 
 function isFresh(username) {
   const e = dataStore[username];
@@ -1625,6 +1632,9 @@ function removeClient(cid) {
   const c = clients.find(x => x.id === cid);
   if (!c) return;
   if (!confirm(`Remove "${c.name}" (@${c.username}) from dashboard?\n\nThis will delete all stored data for this account.`)) return;
+
+  // Mark as deleted so it won't be re-added from remote sources
+  saveDeletedId(cid);
 
   // Remove from clients list
   clients = clients.filter(x => x.id !== cid);
