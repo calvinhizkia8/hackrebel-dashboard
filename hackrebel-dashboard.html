@@ -3,7 +3,17 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Hack Rebel Social — TikTok Dashboard</title>
+<title>Hack Rebel Social</title>
+<meta name="application-name" content="Hack Rebel Social"/>
+<meta name="description" content="Hack Rebel Social — TikTok analytics dashboard for agencies. Track followers, views, engagement, and video performance across multiple TikTok accounts."/>
+<meta property="og:title" content="Hack Rebel Social"/>
+<meta property="og:description" content="TikTok analytics dashboard for agencies. Track followers, views, engagement, and video performance across multiple accounts."/>
+<meta property="og:type" content="website"/>
+<meta property="og:url" content="https://hackrebelsocial.com"/>
+<meta property="og:site_name" content="Hack Rebel Social"/>
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Hack Rebel Social"/>
+<meta name="twitter:description" content="TikTok analytics dashboard for agencies."/>
 <style>
 /* ─── Reset ─── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -777,35 +787,11 @@ input{font-family:inherit;outline:none}
 //  Real-time fetch from TikTok public pages via proxy
 // ═══════════════════════════════════════════════════
 
-// ──────────────────────────────────────────
-//  AUTH GUARD — redirect to login if not authenticated
-// ──────────────────────────────────────────
-(function() {
-  const token = localStorage.getItem('hr_token');
-  if (!token) {
-    window.location.href = '/login.html?next=' + encodeURIComponent(location.pathname + location.search + location.hash);
-    throw new Error('Not authenticated');
-  }
-  // Async server-side verification (non-blocking)
-  fetch('/api/me', { headers: { Authorization: 'Bearer ' + token } })
-    .then(r => {
-      if (!r.ok) {
-        localStorage.removeItem('hr_token');
-        localStorage.removeItem('hr_user');
-        window.location.href = '/login.html';
-      }
-    })
-    .catch(() => {}); // ignore network errors, let user stay
-})();
 
 async function doLogout() {
-  const token = localStorage.getItem('hr_token');
-  if (token) {
-    try { await fetch('/api/logout', { method: 'POST', headers: { Authorization: 'Bearer ' + token } }); } catch {}
-  }
   localStorage.removeItem('hr_token');
   localStorage.removeItem('hr_user');
-  window.location.href = '/login.html';
+  location.reload();
 }
 
 function getUser() {
@@ -822,8 +808,8 @@ const COLORS      = ['#FE2C55','#7C5CFC','#25F4EE','#FF9500','#00D47E','#F97316'
 
 // ── Vercel API endpoint ──────────────────
 // Ganti dengan URL Vercel app kamu setelah deploy
-// Contoh: 'https://hackrebel-dashboard.vercel.app'
-const VERCEL_API = 'https://hackrebel-dashboard.vercel.app';
+// Contoh: 'https://hackrebelsocial.com'
+const VERCEL_API = 'https://hackrebelsocial.com';
 
 // ──────────────────────────────────────────
 //  DEFAULT CLIENTS (preset to user's accounts)
