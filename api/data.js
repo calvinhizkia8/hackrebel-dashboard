@@ -1,8 +1,6 @@
 /**
  * GET /api/data
  * Returns all client data (profile + videos) from Vercel KV.
- * Called by the dashboard every page load.
- * CORS-enabled so GitHub Pages can fetch it.
  */
 import { kv } from '@vercel/kv';
 
@@ -18,18 +16,10 @@ const CLIENTS = [
 ];
 
 export default async function handler(req, res) {
-  const origin = req.headers.origin || '';
-  const allowed = [
-    process.env.DASHBOARD_URL,
-    'http://localhost',
-    'http://127.0.0.1',
-    'null',
-  ];
-  if (allowed.some(o => origin.startsWith(o)) || !origin) {
-    res.setHeader('Access-Control-Allow-Origin', origin || '*');
-  }
+  // CORS — allow all origins (dashboard may be on www. or non-www)
+  res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Cache-Control', 'public, max-age=300');
+  res.setHeader('Cache-Control', 'no-store'); // always fresh
 
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'GET')     return res.status(405).json({ error: 'Method not allowed' });
@@ -51,15 +41,14 @@ export default async function handler(req, res) {
         data[c.username] = dataValues[i];
       }
       statuses[c.username] = {
-        connected:   !!tokenValues[i],
-        hasData:     !!dataValues[i],
-        lastSync:    dataValues[i]?.ts || null,
-        connectUrl:  `${process.env.VERCEL_URL ? 'https://' + process.env.VERCEL_URL : ''}/api/connect?account=${c.username}`,
+        connected:  !!tokenValues[i],
+        hasData:    !!dataValues[i],
+        lastSync:   dataValues[i]?.ts || null,
+        connectUrl: `${process.env.DASHBOARD_URL || ''}/api/connect?account=${c.username}`,
       };
     });
 
     return res.status(200).json({
-            // clients omitted — managed locally in user's localStorage
       data,
       statuses,
       lastSync: Date.now(),
