@@ -1562,14 +1562,7 @@ function renderDetail(cid) {
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:3px"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
         Analytics
       </div>
-      <div class="vtoggle">
-        <button class="vtbtn active" id="vtGrid" onclick="setVidView('grid')" title="Grid view">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-        </button>
-        <button class="vtbtn" id="vtList" onclick="setVidView('list')" title="List view">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-        </button>
-      </div>
+      
     </div>
 
     <div id="vViewGrid" class="vgrid">${videoGrid}</div>
@@ -1578,24 +1571,6 @@ function renderDetail(cid) {
   `;
 }
 
-function setVidView(mode) {
-  const grid = document.getElementById('vViewGrid');
-  const list = document.getElementById('vViewList');
-  const btnG  = document.getElementById('vtGrid');
-  const btnL  = document.getElementById('vtList');
-  if (!grid || !list) return;
-  if (mode === 'list') {
-    grid.style.display = 'none';
-    list.style.display = 'block';
-    btnG.classList.remove('active');
-    btnL.classList.add('active');
-  } else {
-    grid.style.display = '';
-    list.style.display = 'none';
-    btnG.classList.add('active');
-    btnL.classList.remove('active');
-  }
-}
 
 // ──────────────────────────────────────────
 //  VIDEO MODAL
