@@ -126,7 +126,7 @@ async function fetchAndStoreData(account, token) {
   let cursor = null;
   let hasMore = true;
   let page = 0;
-  while (hasMore && page < 3) {
+  while (hasMore && page < 5) {
     const body = { max_count: 20 };
     if (cursor !== null) body.cursor = cursor;
     const videoRes = await fetch(VIDEO_URL, {
