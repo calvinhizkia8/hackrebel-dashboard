@@ -7,13 +7,10 @@
 import { kv } from '@vercel/kv';
 import { fetchAndStoreData } from './callback.js';
 
-const TOKEN_URL    = 'https://open.tiktokapis.com/v2/oauth/token/';
-const USERNAMES = [
-  'elfs_active', 'shumijapan', 'kamlaijakarta', 'pieraspropolinseofficial',
-  'brait.idn', 'm2000.outdoor', 'elfs_fits', 'alamsarideltamas',
-];
+const TOKEN_URL = 'https://open.tiktokapis.com/v2/oauth/token/';
 
 export default async function handler(req, res) {
+  // Security: only allow Vercel cron or requests with secret header
   const authHeader = req.headers.authorization;
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return res.status(401).json({ error: 'Unauthorized' });
@@ -22,31 +19,39 @@ export default async function handler(req, res) {
   const results = { ok: [], failed: [], skipped: [] };
   const start   = Date.now();
 
+  // Dynamically scan all connected accounts from KV
+  const tokenKeys = await kv.keys('token:*');
+  const USERNAMES = (tokenKeys || []).map(k => k.replace('token:', ''));
+  console.log(`🔍 Found ${USERNAMES.length} connected accounts:`, USERNAMES);
+
   for (const username of USERNAMES) {
     const token = await kv.get(`token:${username}`);
 
     if (!token) {
       results.skipped.push(username);
-      console.log(`SKIP ${username}: not connected yet`);
+      console.log(`⏭️  ${username}: not connected yet`);
       continue;
     }
 
     try {
+      // Refresh token if expiring within 1 hour
       let activeToken = token;
       if (token.expires_at - Date.now() < 60 * 60 * 1000) {
-        console.log(`Refreshing token for @${username}`);
+        console.log(`🔄 Refreshing token for @${username}…`);
         activeToken = await refreshToken(username, token);
       }
 
-      console.log(`Fetching @${username}`);
+      // Fetch fresh data
+      console.log(`📡 Fetching @${username}…`);
       await fetchAndStoreData(username, activeToken);
       results.ok.push(username);
-      console.log(`OK @${username} done`);
+      console.log(`✅ @${username} done`);
     } catch (e) {
       results.failed.push({ username, error: e.message });
-      console.error(`ERR @${username}: ${e.message}`);
+      console.error(`❌ @${username}: ${e.message}`);
     }
 
+    // Polite delay between API calls
     await sleep(1000);
   }
 
