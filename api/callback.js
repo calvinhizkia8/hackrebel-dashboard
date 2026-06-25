@@ -110,14 +110,11 @@ export async function fetchAndStoreData(account, token) {
   };
 
   // ── Video list ─────────────────────────────────────────────────────────────
-  const videoRes = await fetch('https://open.tiktokapis.com/v2/video/list/', {
+  const videoFields = 'id,title,cover_image_url,create_time,share_url,view_count,like_count,comment_count,share_count';
+  const videoRes = await fetch(`https://open.tiktokapis.com/v2/video/list/?fields=${videoFields}`, {
     method: 'POST',
     headers: { 'Authorization': authHeader, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      max_count: 20,
-      fields: ['id','title','cover_image_url','create_time','share_url',
-               'view_count','like_count','comment_count','share_count'],
-    }),
+    body: JSON.stringify({ max_count: 20 }),
   });
   const videoData = await videoRes.json();
 
