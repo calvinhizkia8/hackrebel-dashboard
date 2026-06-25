@@ -1022,13 +1022,22 @@ function loadStore() {
 
 function saveClients() {
   try { localStorage.setItem(CLIENTS_KEY, JSON.stringify(clients)); } catch {}
-  // Sync to backend (fire-and-forget)
+  // Sync to backend — use sendBeacon so it survives page navigation/unload
   if (VERCEL_API) {
-    fetch(`${VERCEL_API}/api/clients`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ clients }),
-    }).catch(() => {}); // silently ignore if offline
+    const url  = `${VERCEL_API}/api/clients`;
+    const body = JSON.stringify({ clients });
+    // sendBeacon survives page unload (e.g. when user navigates to TikTok OAuth)
+    try {
+      const sent = navigator.sendBeacon(url, new Blob([body], { type: 'application/json' }));
+      if (!sent) throw new Error('beacon rejected');
+    } catch {
+      // Fallback to fetch (e.g. for older browsers or if beacon quota exceeded)
+      fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body,
+      }).catch(() => {});
+    }
   }
 }
 function saveData()    { try { localStorage.setItem(DATA_KEY, JSON.stringify(dataStore)); } catch {} }
