@@ -141,17 +141,21 @@ async function fetchAndStoreData(account, token) {
     if (batch.length < 20) break; // last page
   }
 
-  const videos = rawVideos.map(v => ({
-    id:         v.id,
-    caption:    v.title || '',
-    createTime: v.create_time ? new Date(v.create_time * 1000).toISOString() : null,
-    thumbnail:  v.cover_image_url || '',
-    videoUrl:   v.share_url || '',
-    views:      v.view_count    || 0,
-    likes:      v.like_count    || 0,
-    comments:   v.comment_count || 0,
-    shares:     v.share_count   || 0,
-  }));
+  // Filter out 0-view videos (private, unpublished, or live drafts)
+  // TikTok public profile never shows these — filtering keeps dashboard in sync
+  const videos = rawVideos
+    .filter(v => (v.view_count || 0) > 0)
+    .map(v => ({
+      id:         v.id,
+      caption:    v.title || '',
+      createTime: v.create_time ? new Date(v.create_time * 1000).toISOString() : null,
+      thumbnail:  v.cover_image_url || '',
+      videoUrl:   v.share_url || '',
+      views:      v.view_count    || 0,
+      likes:      v.like_count    || 0,
+      comments:   v.comment_count || 0,
+      shares:     v.share_count   || 0,
+    }));
 
   await kv.set(`data:${account}`, {
     profile,
