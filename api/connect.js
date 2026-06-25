@@ -17,7 +17,7 @@ export default function handler(req, res) {
 
   const params = new URLSearchParams({
     client_key:    process.env.TIKTOK_APP_ID,
-    scope:         'user.info.basic,user.info.stats,video.list',
+    scope:         'user.info.basic,user.info.profile,user.info.stats,video.list',
     response_type: 'code',
     redirect_uri:  process.env.TIKTOK_REDIRECT_URI,
     state,
