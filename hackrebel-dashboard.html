@@ -1017,7 +1017,17 @@ function loadStore() {
   } catch { dataStore = {}; }
 }
 
-function saveClients() { try { localStorage.setItem(CLIENTS_KEY, JSON.stringify(clients)); } catch {} }
+function saveClients() {
+  try { localStorage.setItem(CLIENTS_KEY, JSON.stringify(clients)); } catch {}
+  // Sync to backend (fire-and-forget)
+  if (VERCEL_API) {
+    fetch(`${VERCEL_API}/api/clients`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clients }),
+    }).catch(() => {}); // silently ignore if offline
+  }
+}
 function saveData()    { try { localStorage.setItem(DATA_KEY, JSON.stringify(dataStore)); } catch {} }
 function loadDeletedIds() { try { return new Set(JSON.parse(localStorage.getItem(DELETED_KEY) || '[]')); } catch { return new Set(); } }
 function saveDeletedId(id) { try { const s = loadDeletedIds(); s.add(id); localStorage.setItem(DELETED_KEY, JSON.stringify([...s])); } catch {} }
