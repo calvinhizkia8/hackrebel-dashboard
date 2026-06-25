@@ -1174,7 +1174,7 @@ function extractVideos(data) {
       if (!src) continue;
       const arr = Array.isArray(src) ? src : Object.values(src);
       if (arr.length) {
-        return arr.slice(0, 20).map(v => ({
+        return arr.slice(0, 60).map(v => ({
           id:       v.id || v.itemId || '',
           caption:  v.desc || '',
           createTime: v.createTime ? new Date(v.createTime*1000).toISOString() : null,
