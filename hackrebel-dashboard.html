@@ -230,6 +230,9 @@ input{font-family:inherit;outline:none}
 .ksi:last-child{border-right:none}
 .ksv{font-size:14px;font-weight:800}
 .ksl{font-size:9.5px;color:var(--t3);margin-top:3px}
+.ksgrow{font-size:9px;font-weight:700;margin-top:3px}
+.ksgrow.up{color:#25f4ee}
+.ksgrow.dn{color:var(--pink)}
 
 .wbar{display:flex;align-items:center;gap:7px;background:rgba(254,44,85,.07);
   border-bottom:1px solid rgba(254,44,85,.15);padding:9px 14px;font-size:11.5px;color:var(--pink)}
@@ -1452,6 +1455,22 @@ function renderDetail(cid) {
   const acStatus   = accountStatuses[c.username];
   const connectUrl = acStatus?.connectUrl || `${VERCEL_API}/api/connect?account=${c.username}`;
 
+  // ── Monthly stats ─────────────────────────────────────────────────
+  const _now = new Date();
+  const _curMonth = _now.getFullYear() + '-' + String(_now.getMonth()+1).padStart(2,'0');
+  const _monthVids = vids.filter(v => v.createTime && v.createTime.startsWith(_curMonth));
+  const monthVideoCount = _monthVids.length;
+  const monthLikes = _monthVids.reduce((s,v) => s+(v.likes||0), 0);
+
+  // Follower growth: localStorage snapshot at first load of this month
+  const _snapKey = `fol_snap:${c.username}:${_curMonth}`;
+  let _folSnap = localStorage.getItem(_snapKey);
+  if (!_folSnap && p.followers > 0) {
+    _folSnap = String(p.followers);
+    localStorage.setItem(_snapKey, _folSnap);
+  }
+  const folGrowth = (_folSnap && p.followers > 0) ? (p.followers - parseInt(_folSnap)) : null;
+
   const videoGrid = vids.length > 0
     ? vids.map(v => {
         const th = v.thumbnail || `https://picsum.photos/seed/${v.id||Math.random()}/360/640`;
@@ -1547,10 +1566,25 @@ function renderDetail(cid) {
     ${st.warn?`<div class="wbar">⚠️ No post detected in ${st.daysOut} days — needs attention!</div>`:''}
 
     <div class="kstrip">
-      <div class="ksi"><div class="ksv">${fmt(p.followers)}</div><div class="ksl">Followers</div></div>
-      <div class="ksi"><div class="ksv">${fmt(p.totalLikes)}</div><div class="ksl">Total Likes</div></div>
-      <div class="ksi"><div class="ksv">${p.videoCount||'—'}</div><div class="ksl">Videos</div></div>
-      <div class="ksi"><div class="ksv" style="${st.warn?'color:var(--pink)':''}">${st.daysOut!=null?st.daysOut+'d':'—'}</div><div class="ksl">Days Since Post</div></div>
+      <div class="ksi">
+        <div class="ksv">${fmt(p.followers)}</div>
+        <div class="ksl">Followers</div>
+        ${folGrowth !== null
+          ? `<div class="ksgrow ${folGrowth>=0?'up':'dn'}">${folGrowth>=0?'+':''}${fmt(folGrowth)} bulan ini</div>`
+          : ''}
+      </div>
+      <div class="ksi">
+        <div class="ksv">${fmt(monthLikes)}</div>
+        <div class="ksl">Likes Bulan Ini</div>
+      </div>
+      <div class="ksi">
+        <div class="ksv">${monthVideoCount}</div>
+        <div class="ksl">Video Bulan Ini</div>
+      </div>
+      <div class="ksi">
+        <div class="ksv" style="${st.warn?'color:var(--pink)':''}">${st.daysOut!=null?st.daysOut+'d':'—'}</div>
+        <div class="ksl">Days Since Post</div>
+      </div>
     </div>
 
     <div class="tabs" style="display:flex;align-items:center">
