@@ -1,7 +1,6 @@
 /**
  * GET /api/callback?code=...&state=...
  * TikTok redirects here after user authorizes.
- * Exchanges auth code for access_token and stores it in Vercel KV.
  */
 import { kv } from '@vercel/kv';
 
@@ -10,16 +9,14 @@ const TOKEN_URL = 'https://open.tiktokapis.com/v2/oauth/token/';
 export default async function handler(req, res) {
   const { code, state, error, error_description } = req.query;
 
-  // User denied
   if (error) {
-    return res.status(400).send(htmlPage('Gagal Connect', `
+    return res.status(400).send(htmlPage('❌ Gagal Connect', `
       <p>TikTok menolak permintaan: <strong>${error}</strong></p>
       <p>${error_description || ''}</p>
-      <a href="${process.env.DASHBOARD_URL}">Kembali ke Dashboard</a>
+      <a href="${process.env.DASHBOARD_URL}">← Kembali ke Dashboard</a>
     `));
   }
 
-  // Decode state
   let account;
   try {
     const decoded = JSON.parse(Buffer.from(state, 'base64url').toString());
@@ -27,10 +24,9 @@ export default async function handler(req, res) {
     if (!account) throw new Error('No account in state');
     if (Date.now() - decoded.ts > 10 * 60 * 1000) throw new Error('State expired');
   } catch (e) {
-    return res.status(400).send(htmlPage('Error', `<p>State tidak valid: ${e.message}</p>`));
+    return res.status(400).send(htmlPage('❌ Error', `<p>State tidak valid: ${e.message}</p>`));
   }
 
-  // Exchange code for tokens
   let tokenData;
   try {
     const body = new URLSearchParams({
@@ -40,73 +36,70 @@ export default async function handler(req, res) {
       grant_type:    'authorization_code',
       redirect_uri:  process.env.TIKTOK_REDIRECT_URI,
     });
-
     const r = await fetch(TOKEN_URL, {
       method:  'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body:    body.toString(),
     });
     tokenData = await r.json();
-
     if (tokenData.error) throw new Error(tokenData.error_description || tokenData.error);
   } catch (e) {
-    return res.status(500).send(htmlPage('Token Error', `<p>${e.message}</p>`));
+    return res.status(500).send(htmlPage('❌ Token Error', `<p>${e.message}</p>`));
   }
 
-  // Store tokens in KV
   const tokenRecord = {
-    open_id:       tokenData.open_id,
-    access_token:  tokenData.access_token,
-    refresh_token: tokenData.refresh_token,
-    scope:         tokenData.scope,
-    expires_at:    Date.now() + (tokenData.expires_in * 1000),
+    open_id:            tokenData.open_id,
+    access_token:       tokenData.access_token,
+    refresh_token:      tokenData.refresh_token,
+    scope:              tokenData.scope,
+    expires_at:         Date.now() + (tokenData.expires_in * 1000),
     refresh_expires_at: Date.now() + (tokenData.refresh_expires_in * 1000),
-    connected_at:  new Date().toISOString(),
+    connected_at:       new Date().toISOString(),
     account,
   };
-
   await kv.set(`token:${account}`, tokenRecord);
 
-  // Also fetch initial data immediately
+  // Fetch initial data
+  let fetchError = null;
   try {
     await fetchAndStoreData(account, tokenRecord);
   } catch (e) {
-    console.error('Initial fetch failed:', e.message);
+    fetchError = e.message;
+    console.error('Initial fetch failed for', account, ':', e.message);
   }
 
-  // Show success page
-  return res.status(200).send(htmlPage('Berhasil!', `
-    <p>Akun <strong>@${account}</strong> berhasil terhubung ke dashboard!</p>
-    <p>Data TikTok sudah bisa ditampilkan.</p>
+  return res.status(200).send(htmlPage('✅ Berhasil!', `
+    <p>Akun <strong>@${account}</strong> berhasil terhubung!</p>
+    ${fetchError ? `<p style="color:#FF9500;font-size:12px">⚠️ Data fetch: ${fetchError}</p>` : '<p>Data TikTok sudah tersimpan.</p>'}
     <br/>
     <a href="${process.env.DASHBOARD_URL}" style="
       display:inline-block;background:#FE2C55;color:#fff;
       padding:10px 22px;border-radius:8px;text-decoration:none;font-weight:700
-    ">Lihat Dashboard</a>
-    <p style="margin-top:16px;font-size:12px;color:#888">
-      Halaman ini bisa ditutup.
-    </p>
+    ">Lihat Dashboard →</a>
   `));
 }
 
-// Fetch profile + videos and cache in KV
-async function fetchAndStoreData(account, token) {
-  const headers = {
-    'Authorization': `Bearer ${token.access_token}`,
-    'Content-Type':  'application/json',
-  };
+export async function fetchAndStoreData(account, token) {
+  const authHeader = `Bearer ${token.access_token}`;
 
+  // ── User info ──────────────────────────────────────────────────────────────
   const userRes = await fetch(
-    'https://open.tiktokapis.com/v2/user/info/?fields=display_name,bio_description,avatar_url,is_verified,follower_count,following_count,likes_count,video_count',
-    { headers }
+    'https://open.tiktokapis.com/v2/user/info/?fields=open_id,display_name,bio_description,avatar_url,avatar_url_100,is_verified,follower_count,following_count,likes_count,video_count',
+    { headers: { 'Authorization': authHeader } }
   );
   const userData = await userRes.json();
+
+  if (userData.error?.code && userData.error.code !== 'ok') {
+    throw new Error(`User info API error: ${userData.error.code} - ${userData.error.message}`);
+  }
+
   const u = userData?.data?.user || {};
+  console.log(`[@${account}] user API status:${userRes.status} display_name:${u.display_name} followers:${u.follower_count}`);
 
   const profile = {
-    nickname:    u.display_name   || account,
+    nickname:    u.display_name    || account,
     handle:      '@' + account,
-    avatarThumb: u.avatar_url     || '',
+    avatarThumb: u.avatar_url_100  || u.avatar_url || '',
     verified:    !!u.is_verified,
     private:     false,
     bio:         u.bio_description || '',
@@ -116,9 +109,10 @@ async function fetchAndStoreData(account, token) {
     videoCount:  u.video_count     || 0,
   };
 
+  // ── Video list ─────────────────────────────────────────────────────────────
   const videoRes = await fetch('https://open.tiktokapis.com/v2/video/list/', {
     method: 'POST',
-    headers,
+    headers: { 'Authorization': authHeader, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       max_count: 20,
       fields: ['id','title','cover_image_url','create_time','share_url',
@@ -126,7 +120,13 @@ async function fetchAndStoreData(account, token) {
     }),
   });
   const videoData = await videoRes.json();
+
+  if (videoData.error?.code && videoData.error.code !== 'ok') {
+    throw new Error(`Video list API error: ${videoData.error.code} - ${videoData.error.message}`);
+  }
+
   const rawVideos = videoData?.data?.videos || [];
+  console.log(`[@${account}] video API status:${videoRes.status} count:${rawVideos.length}`);
 
   const videos = rawVideos.map(v => ({
     id:         v.id,
@@ -150,14 +150,11 @@ async function fetchAndStoreData(account, token) {
   return { profile, videos };
 }
 
-export { fetchAndStoreData };
-
-// Simple HTML wrapper
 function htmlPage(title, body) {
   return `<!DOCTYPE html><html lang="id"><head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
-    <title>${title} - Hack Rebel Social</title>
+    <title>${title} — Hack Rebel Social</title>
     <style>
       *{box-sizing:border-box;margin:0;padding:0}
       body{font-family:-apple-system,BlinkMacSystemFont,'Inter',sans-serif;
