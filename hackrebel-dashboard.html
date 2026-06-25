@@ -950,7 +950,8 @@ async function loadRemoteData() {
   // ── Try Vercel API first (TikTok Business API data) ──────────────
   if (VERCEL_API) {
     try {
-      const r = await fetch(`${VERCEL_API}/api/data`, { cache: 'no-store' });
+      const accountList = clients.map(c => c.username).join(',');
+      const r = await fetch(`${VERCEL_API}/api/data?accounts=${accountList}`, { cache: 'no-store' });
       if (r.ok) {
         const json = await r.json();
         if (json.clients?.length) {
