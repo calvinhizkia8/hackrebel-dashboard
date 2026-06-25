@@ -120,7 +120,7 @@ async function fetchAndStoreData(account, token) {
 
   // Video list — paginate up to 3 pages (max 60 videos)
   // NOTE: TikTok v2 requires `fields` as URL query param, NOT in JSON body
-  const VIDEO_FIELDS = 'id,title,cover_image_url,create_time,share_url,view_count,like_count,comment_count,share_count';
+  const VIDEO_FIELDS = 'id,title,cover_image_url,create_time,share_url,view_count,like_count,comment_count,share_count,video_type';
   const VIDEO_URL = `https://open.tiktokapis.com/v2/video/list/?fields=${VIDEO_FIELDS}`;
   const rawVideos = [];
   let cursor = null;
@@ -141,10 +141,14 @@ async function fetchAndStoreData(account, token) {
     if (batch.length < 20) break; // last page
   }
 
-  // Filter out 0-view videos (private, unpublished, or live drafts)
-  // TikTok public profile never shows these — filtering keeps dashboard in sync
+  // Filter: keep only public regular videos (exclude private/live/unpublished)
+  // video_type: 1 = normal post, 2 = live clip invite
   const videos = rawVideos
-    .filter(v => (v.view_count || 0) > 0)
+    .filter(v => {
+      if ((v.view_count || 0) === 0) return false;
+      if (v.video_type === 2 || v.video_type === '2') return false;
+      return true;
+    })
     .map(v => ({
       id:         v.id,
       caption:    v.title || '',
@@ -155,6 +159,7 @@ async function fetchAndStoreData(account, token) {
       likes:      v.like_count    || 0,
       comments:   v.comment_count || 0,
       shares:     v.share_count   || 0,
+      videoType:  v.video_type    || 0,
     }));
 
   await kv.set(`data:${account}`, {
