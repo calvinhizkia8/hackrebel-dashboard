@@ -141,10 +141,10 @@ async function fetchAndStoreData(account, token) {
     if (batch.length < 20) break; // last page
   }
 
-  // Filter out 0-view videos (private, unpublished, or live drafts)
-  // TikTok public profile never shows these — filtering keeps dashboard in sync
+  // Filter out live invite clips + private/unpublished videos
+  // Live invite clips have <10 views and are hidden by TikTok on public profile
   const videos = rawVideos
-    .filter(v => (v.view_count || 0) > 0)
+    .filter(v => (v.view_count || 0) >= 10)
     .map(v => ({
       id:         v.id,
       caption:    v.title || '',
