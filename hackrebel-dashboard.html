@@ -263,7 +263,7 @@ input{font-family:inherit;outline:none}
 /* ─── Video list view ─── */
 .vlist{display:flex;flex-direction:column;gap:4px}
 .vlist-row{
-  display:grid;grid-template-columns:56px 1fr repeat(6,62px) 30px;
+  display:grid;grid-template-columns:56px 1fr repeat(5,68px) 30px;
   align-items:center;gap:8px;
   padding:10px 12px;background:var(--s1);border:1px solid var(--b1);
   border-radius:10px;cursor:pointer;transition:background .13s;
@@ -1510,8 +1510,7 @@ function renderDetail(cid) {
           ${cell(fmtN(v.likes),     'Likes',    'var(--pink)')}
           ${cell(fmtN(v.comments),  'Comments', 'var(--cyan)')}
           ${cell(fmtN(v.shares),    'Shares')}
-          ${cell(v.views3s!=null ? ((v.views3s/v.views*100).toFixed(0)+'%') : '—', '3s View%', 'var(--amber)')}
-          ${cell(eng!=null ? eng+'%' : '—', 'Eng.%', 'var(--green)')}
+    ${cell(eng!=null ? eng+'%' : '—', 'Eng.%', 'var(--green)')}
           <div class="vlist-open">
             <a href="https://www.tiktok.com/@${c.username}/video/${v.id}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Open on TikTok">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
