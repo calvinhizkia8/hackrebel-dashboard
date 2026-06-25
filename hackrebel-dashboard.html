@@ -603,7 +603,7 @@ input{font-family:inherit;outline:none}
     <div class="kpi-grid" id="kpiGrid"></div>
     <div class="sec-head">
       <h2>All Accounts</h2>
-      <aside id="secAside">Last 30 days</aside>
+      <aside id="secAside"></aside>
     </div>
     <div class="cgrid" id="cgrid"></div>
   </div>
@@ -1253,7 +1253,8 @@ function computeStats(username) {
   }
 
   const { profile, videos, source } = entry;
-  const cutoff = new Date(); cutoff.setDate(cutoff.getDate()-30);
+  const _now = new Date();
+  const cutoff = new Date(_now.getFullYear(), _now.getMonth(), 1); // 1st of current month
   const recent = (videos||[]).filter(v => v.createTime && new Date(v.createTime) >= cutoff);
 
   const rViews    = recent.reduce((s,v)=>s+v.views,0);
@@ -1308,7 +1309,7 @@ function renderDash() {
     { label:'Total Accounts',  value: clients.length,    sub:'accounts tracked',         accent:'var(--pink)' },
     { label:'Total Followers', value: fmt(totFollowers), sub:'across all accounts',       accent:'var(--cyan)' },
     { label:'Total Likes',     value: fmt(totLikes),     sub:'all-time combined',         accent:'var(--purple)' },
-    { label:'Posts This Month',value: postsThisMonth,    sub:'content last 30 days',      accent:'var(--amber)' },
+    { label:'Posts This Month',value: postsThisMonth,    sub:new Date().toLocaleString('id-ID',{month:'long',year:'numeric'}), accent:'var(--amber)' },
     { label:'Needs Attention', value: warns,
       sub: warns > 0 ? warns+' inactive account(s)' : 'All accounts active',
       accent: warns > 0 ? 'var(--pink)' : 'var(--green)' },
@@ -1318,6 +1319,10 @@ function renderDash() {
       <div class="kpi-value" style="color:${k.accent}">${k.value}</div>
       <div class="kpi-sub">${k.sub}</div>
     </div>`).join('');
+
+  // Set month label
+  const _monthLabel = new Date().toLocaleString('id-ID', {month:'long', year:'numeric'});
+  document.getElementById('secAside').textContent = _monthLabel;
 
   // Client grid
   document.getElementById('cgrid').innerHTML = clients.map(c => {
