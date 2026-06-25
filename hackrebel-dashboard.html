@@ -409,6 +409,25 @@ input{font-family:inherit;outline:none}
   appearance:none;cursor:pointer;transition:border-color .14s}
 .csv-select:focus{border-color:var(--pink);outline:none}
 
+/* ─── Connect-warning modal ─── */
+.cmodal-bg{display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.88);
+  backdrop-filter:blur(10px);align-items:center;justify-content:center;padding:16px}
+.cmodal-bg.open{display:flex;animation:pop .2s ease}
+.cmodal{background:var(--s1);border:1px solid var(--b2);border-radius:18px;
+  padding:28px;width:420px;max-width:95vw;box-shadow:var(--sh)}
+.cmodal-icon{font-size:36px;margin-bottom:12px;text-align:center}
+.cmodal h2{font-size:16px;font-weight:800;margin-bottom:8px;text-align:center}
+.cmodal-sub{font-size:12px;color:var(--t2);text-align:center;margin-bottom:20px;line-height:1.6}
+.cmodal-user{background:rgba(254,44,85,.08);border:1px solid rgba(254,44,85,.2);
+  border-radius:10px;padding:12px 16px;margin-bottom:20px;text-align:center}
+.cmodal-user .cu-label{font-size:10px;color:var(--t2);font-weight:600;letter-spacing:.06em;margin-bottom:4px}
+.cmodal-user .cu-name{font-size:15px;font-weight:800;color:var(--pink)}
+.cmodal-steps{font-size:11.5px;color:var(--t2);margin-bottom:20px;
+  background:rgba(255,255,255,.03);border-radius:10px;padding:14px 16px}
+.cmodal-steps p{margin:4px 0;line-height:1.5}
+.cmodal-acts{display:flex;gap:10px}
+.cmodal-acts .btn{flex:1;justify-content:center}
+
 /* ─── Add client modal ─── */
 .amodal-bg{display:none;position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.82);
   backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:16px}
@@ -741,6 +760,34 @@ input{font-family:inherit;outline:none}
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
         Simpan Data
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ CONNECT WARNING MODAL ══════ -->
+<div class="cmodal-bg" id="cmodal" onclick="if(event.target===this)closeConnectModal()">
+  <div class="cmodal">
+    <div class="cmodal-icon">🔗</div>
+    <h2>Connect TikTok Account</h2>
+    <div class="cmodal-sub">Pastikan kamu sudah login ke TikTok<br>dengan akun yang tepat sebelum melanjutkan.</div>
+    <div class="cmodal-user">
+      <div class="cu-label">AKUN YANG AKAN DIKONEKSIKAN</div>
+      <div class="cu-name" id="cmodalUsername">@username</div>
+    </div>
+    <div class="cmodal-steps">
+      <p>⚠️ <strong>Penting:</strong> TikTok akan menggunakan akun yang <strong>sedang login saat ini</strong>.</p>
+      <p>1. Buka TikTok dan switch ke akun <span id="cmodalUsernameStep" style="color:var(--pink);font-weight:700">@username</span></p>
+      <p>2. Kembali ke sini dan klik <strong>Lanjut ke TikTok</strong></p>
+    </div>
+    <div class="cmodal-acts">
+      <a id="cmodalTikTokLink" href="https://www.tiktok.com" target="_blank" rel="noopener"
+        class="btn btn-outline" onclick="event.stopPropagation()" style="text-decoration:none">
+        Buka TikTok ↗
+      </a>
+      <a id="cmodalProceedBtn" href="#" target="_blank" rel="noopener"
+        class="btn btn-pink" onclick="closeConnectModal()" style="text-decoration:none">
+        Lanjut ke TikTok →
+      </a>
     </div>
   </div>
 </div>
@@ -1292,12 +1339,18 @@ function renderDash() {
             ${st.lastDate ? 'Last: ' + fmtDate(st.lastDate) : st.source==='mock' ? 'Fetching…' : 'No recent posts'}
           </div>
           ${!isConnected && VERCEL_API
-            ? `<a href="${connectUrl}" target="_blank" rel="noopener"
+            ? `<button
                 style="font-size:10px;font-weight:700;color:var(--pink);
                   background:rgba(254,44,85,.1);border:1px solid rgba(254,44,85,.2);
-                  padding:3px 8px;border-radius:6px;text-decoration:none;white-space:nowrap"
-                onclick="event.stopPropagation()">🔗 Connect</a>`
-            : `<div class="carrow">${st.source!=='mock'?'→':''}</div>`
+                  padding:3px 8px;border-radius:6px;cursor:pointer;white-space:nowrap"
+                onclick="event.stopPropagation();openConnectModal('${esc(connectUrl)}','${esc(c.username)}')">🔗 Connect</button>`
+            : isConnected
+              ? `<button
+                  style="font-size:10px;font-weight:700;color:var(--t2);
+                    background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
+                    padding:3px 8px;border-radius:6px;cursor:pointer;white-space:nowrap"
+                  onclick="event.stopPropagation();confirmDisconnect('${esc(c.username)}','${esc(c.name)}')">⛔ Disconnect</button>`
+              : `<div class="carrow">${st.source!=='mock'?'→':''}</div>`
           }
         </div>
       </div>`;
@@ -1335,6 +1388,8 @@ function renderDetail(cid) {
   const st = computeStats(c.username);
   const p  = st.profile;
   const vids = st.videos || [];
+  const acStatus   = accountStatuses[c.username];
+  const connectUrl = acStatus?.connectUrl || `${VERCEL_API}/api/connect?account=${c.username}`;
 
   const videoGrid = vids.length > 0
     ? vids.map(v => {
@@ -1406,6 +1461,12 @@ function renderDetail(cid) {
       <span style="font-size:13px;font-weight:600">@${c.username}</span>
       ${st.warn?`<span style="font-size:9.5px;font-weight:700;background:rgba(254,44,85,.1);border:1px solid rgba(254,44,85,.2);color:var(--pink);padding:2px 7px;border-radius:20px">⚠ ${st.daysOut}d no post</span>`:''}
       <div style="flex:1"></div>
+      ${acStatus?.connected
+        ? `<button class="btn btn-outline btn-sm" style="color:var(--t2);border-color:rgba(255,255,255,.1)"
+            onclick="confirmDisconnect('${esc(c.username)}','${esc(c.name)}')">⛔ Disconnect</button>`
+        : `<button class="btn btn-pink btn-sm"
+            onclick="openConnectModal('${esc(connectUrl)}','${esc(c.username)}')">🔗 Connect</button>`
+      }
       <a href="https://www.tiktok.com/@${c.username}" target="_blank" rel="noopener"
         class="btn btn-outline btn-sm" style="text-decoration:none">TikTok ↗</a>
     </div>
@@ -1580,6 +1641,42 @@ function closeAddModal() {
   ['inUser','inName','inCat'].forEach(id => { document.getElementById(id).value = ''; });
   document.getElementById('amLoad').classList.remove('on');
   document.getElementById('amErr').classList.remove('on');
+}
+
+// ── Connect warning modal ──────────────────────
+function openConnectModal(connectUrl, username) {
+  document.getElementById('cmodalUsername').textContent     = '@' + username;
+  document.getElementById('cmodalUsernameStep').textContent = '@' + username;
+  document.getElementById('cmodalTikTokLink').href          = 'https://www.tiktok.com/@' + username;
+  document.getElementById('cmodalProceedBtn').href          = connectUrl;
+  document.getElementById('cmodal').classList.add('open');
+}
+function closeConnectModal() {
+  document.getElementById('cmodal').classList.remove('open');
+}
+
+// ── Disconnect ────────────────────────────────
+function confirmDisconnect(username, name) {
+  if (!confirm('Disconnect @' + username + ' (' + name + ')?' +
+    '\n\nIni akan menghapus token dan data TikTok mereka dari server. Kamu perlu connect ulang untuk memperbarui data.')) return;
+  doDisconnect(username, name);
+}
+async function doDisconnect(username, name) {
+  try {
+    toast('info', 'Disconnecting @' + username + '…');
+    const r = await fetch(VERCEL_API + '/api/disconnect?account=' + encodeURIComponent(username));
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    delete dataStore[username];
+    if (accountStatuses[username]) {
+      accountStatuses[username].connected = false;
+      accountStatuses[username].hasData   = false;
+    }
+    renderDash();
+    if (activeCid === username) renderDetail(username);
+    toast('ok', '✅ @' + username + ' disconnected');
+  } catch (e) {
+    toast('err', '⚠️ Disconnect failed: ' + e.message);
+  }
 }
 
 async function doAdd() {
