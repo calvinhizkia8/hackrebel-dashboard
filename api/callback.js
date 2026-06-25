@@ -119,16 +119,17 @@ async function fetchAndStoreData(account, token) {
   };
 
   // Video list — paginate up to 3 pages (max 60 videos)
-  const VIDEO_FIELDS = ['id','title','cover_image_url','create_time','share_url',
-                        'view_count','like_count','comment_count','share_count'];
+  // NOTE: TikTok v2 requires `fields` as URL query param, NOT in JSON body
+  const VIDEO_FIELDS = 'id,title,cover_image_url,create_time,share_url,view_count,like_count,comment_count,share_count';
+  const VIDEO_URL = `https://open.tiktokapis.com/v2/video/list/?fields=${VIDEO_FIELDS}`;
   const rawVideos = [];
   let cursor = null;
   let hasMore = true;
   let page = 0;
   while (hasMore && page < 3) {
-    const body = { max_count: 20, fields: VIDEO_FIELDS };
+    const body = { max_count: 20 };
     if (cursor !== null) body.cursor = cursor;
-    const videoRes = await fetch('https://open.tiktokapis.com/v2/video/list/', {
+    const videoRes = await fetch(VIDEO_URL, {
       method: 'POST', headers, body: JSON.stringify(body),
     });
     const videoData = await videoRes.json();
