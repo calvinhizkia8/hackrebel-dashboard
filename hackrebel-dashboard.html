@@ -959,7 +959,7 @@ async function loadRemoteData() {
           const deletedIds = loadDeletedIds();
           const remoteClients = json.clients.filter(c => !deletedIds.has(c.id));
           const remoteIds = new Set(remoteClients.map(c => c.id));
-          const localOnly = clients.filter(c => !remoteIds.has(c.id) && !deletedIds.has(c.id));
+          const localOnly = clients.filter(c => !remoteIds.has(c.id));
           clients = [...remoteClients, ...localOnly];
           saveClients(); // saves locally + pushes merged list to backend
         } else if (clients.length) {
@@ -1043,6 +1043,7 @@ function saveClients() {
 function saveData()    { try { localStorage.setItem(DATA_KEY, JSON.stringify(dataStore)); } catch {} }
 function loadDeletedIds() { try { return new Set(JSON.parse(localStorage.getItem(DELETED_KEY) || '[]')); } catch { return new Set(); } }
 function saveDeletedId(id) { try { const s = loadDeletedIds(); s.add(id); localStorage.setItem(DELETED_KEY, JSON.stringify([...s])); } catch {} }
+function clearDeletedId(id) { try { const s = loadDeletedIds(); s.delete(id); localStorage.setItem(DELETED_KEY, JSON.stringify([...s])); } catch {} }
 
 function isFresh(username) {
   const e = dataStore[username];
@@ -1755,6 +1756,7 @@ async function doAdd() {
   // Add immediately with mock state
   const color  = COLORS[clients.length % COLORS.length];
   const client = { id:uraw, username:uraw, name:name||uraw, category:cat||'—', color };
+  clearDeletedId(uraw); // un-delete if previously removed
   clients.push(client);
   saveClients();
   closeAddModal();
