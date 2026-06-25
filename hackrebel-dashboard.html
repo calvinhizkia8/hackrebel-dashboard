@@ -1661,43 +1661,24 @@ async function doRefresh(force = true) {
   const rfIco = document.getElementById('rfIco');
   rfIco.classList.add('spin');
   document.getElementById('fetchBar').classList.remove('hide');
+  document.getElementById('fetchTxt').textContent = 'Refreshing from API…';
 
-  const toFetch = force ? clients : clients.filter(c => !isFresh(c.username));
-  let done = 0;
-
-  const updateBar = (msg) => {
-    document.getElementById('fetchTxt').textContent = msg || `Fetching… (${done}/${toFetch.length})`;
-  };
-
-  updateBar();
-
-  for (const c of toFetch) {
-    updateBar(`Fetching @${c.username}… (${done+1}/${toFetch.length})`);
-    try {
-      const { profile, videos } = await fetchTikTok(c.username);
-      setData(c.username, profile, videos, 'live');
-      // Update display name if not manually set
-      const dc = DEFAULTS.find(d => d.id === c.id);
-      if (profile.nickname && (!dc || c.name === dc.name)) {
-        // keep the user's label, just cache data
-      }
-      toast('ok', `✅ ${c.name} updated`);
-    } catch (e) {
-      toast('err', `⚠️ ${c.name}: ${e.message}`);
+  try {
+    const ok = await loadRemoteData();
+    if (ok) {
+      renderDash();
+      if (activeCid) renderDetail(activeCid);
+      toast('ok', '✅ Data refreshed from API');
+    } else {
+      toast('err', '⚠️ Could not reach API');
     }
-    done++;
-    renderDash();
-    if (activeCid) renderDetail(activeCid);
-    // small pause between requests
-    if (done < toFetch.length) await new Promise(r => setTimeout(r, 500));
+  } catch (e) {
+    toast('err', '⚠️ Refresh failed: ' + e.message);
   }
 
   rfIco.classList.remove('spin');
   document.getElementById('fetchBar').classList.add('hide');
   fetching = false;
-
-  const now = new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-  document.getElementById('tbTs').textContent = 'Updated at ' + now;
 }
 
 // ──────────────────────────────────────────
