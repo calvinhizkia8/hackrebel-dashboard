@@ -961,6 +961,9 @@ async function loadRemoteData() {
           const remoteIds = new Set(remoteClients.map(c => c.id));
           const localOnly = clients.filter(c => !remoteIds.has(c.id) && !deletedIds.has(c.id));
           clients = [...remoteClients, ...localOnly];
+          saveClients(); // saves locally + pushes merged list to backend
+        } else if (clients.length) {
+          // Server has no client list yet — push local clients to backend
           saveClients();
         }
         if (json.data) {
