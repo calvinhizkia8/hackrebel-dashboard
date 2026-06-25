@@ -14,6 +14,7 @@ const CLIENTS = [
   { id: 'elfs_fits',                username: 'elfs_fits',                name: 'Elfs Fits',          category: 'Fashion',    color: '#A855F7' },
   { id: 'alamsarideltamas',         username: 'alamsarideltamas',         name: 'Alam Sari Deltamas', category: 'Property',   color: '#FE2C55' },
   { id: 'alvaboard',               username: 'alvaboard',               name: 'Alva Board',         category: 'Lifestyle',  color: '#25F4EE' },
+  { id: 'm2000_id',                username: 'm2000_id',                name: 'M2000 Lighter',      category: 'Lifestyle',  color: '#F97316' },
 ];
 
 export default async function handler(req, res) {
