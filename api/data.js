@@ -19,14 +19,20 @@ export default async function handler(req, res) {
   try {
     const baseUrl = process.env.VERCEL_URL ? 'https://' + process.env.VERCEL_URL : '';
 
-    // ── 1. Usernames from dashboard (query param) ─────────────────────
+    // ── 1. Load saved clients from KV ────────────────────────────────
+    const savedClients = await kv.get('dashboard:clients') || [];
+
+    // ── 2. Usernames from dashboard (query param, as fallback) ────────
     const accountsParam = req.query.accounts || '';
     const requestedUsernames = accountsParam
       ? accountsParam.split(',').map(s => s.trim()).filter(Boolean)
       : [];
 
-    // ── 2. Also scan KV for any connected accounts not in the list ────
-    //    This ensures newly connected accounts show up automatically.
+    // Merge saved clients + query param usernames
+    const savedUsernames = savedClients.map(c => c.username || c.id).filter(Boolean);
+    const allRequested = [...new Set([...savedUsernames, ...requestedUsernames])];
+
+    // ── 3. Also scan KV for any connected accounts not in the list ────
     let connectedUsernames = [];
     try {
       const tokenKeys = await kv.keys('token:*');
@@ -35,14 +41,14 @@ export default async function handler(req, res) {
       console.warn('kv.keys scan failed:', e.message);
     }
 
-    // ── 3. Merge both lists (deduplicated) ────────────────────────────
-    const allUsernames = [...new Set([...requestedUsernames, ...connectedUsernames])];
+    // ── 4. Merge all sources (deduplicated) ──────────────────────────
+    const allUsernames = [...new Set([...allRequested, ...connectedUsernames])];
 
     if (!allUsernames.length) {
-      return res.status(200).json({ data: {}, statuses: {}, lastSync: Date.now() });
+      return res.status(200).json({ clients: savedClients, data: {}, statuses: {}, lastSync: Date.now() });
     }
 
-    // ── 4. Batch fetch data + tokens ──────────────────────────────────
+    // ── 5. Batch fetch data + tokens ──────────────────────────────────
     const dataKeys  = allUsernames.map(u => `data:${u}`);
     const tokenKeys = allUsernames.map(u => `token:${u}`);
 
@@ -51,7 +57,7 @@ export default async function handler(req, res) {
       kv.mget(...tokenKeys),
     ]);
 
-    // ── 5. Build response ─────────────────────────────────────────────
+    // ── 6. Build response ─────────────────────────────────────────────
     const data     = {};
     const statuses = {};
 
@@ -65,7 +71,7 @@ export default async function handler(req, res) {
       };
     });
 
-    return res.status(200).json({ data, statuses, lastSync: Date.now() });
+    return res.status(200).json({ clients: savedClients, data, statuses, lastSync: Date.now() });
 
   } catch (e) {
     console.error('data.js error:', e);
