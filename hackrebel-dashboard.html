@@ -535,6 +535,7 @@ input{font-family:inherit;outline:none}
     <div class="sb-link" onclick="openAddModal()"><span class="ico">➕</span>Add Account</div>
     <div class="sb-link" onclick="openCsvModal()"><span class="ico">📥</span>Import Data</div>
     <div class="sb-link" onclick="doRefresh()"><span class="ico">🔄</span>Refresh All</div>
+    <div class="sb-link" onclick="doClearCache()"><span class="ico">🗑️</span>Clear Cache</div>
     <div class="sb-section" style="margin-top:8px">Clients</div>
     <div id="sbClients"></div>
   </nav>
@@ -1771,6 +1772,17 @@ function removeClient(cid) {
   else renderDash();
 
   toast('ok', `🗑️ ${c.name} removed`);
+}
+
+// ──────────────────────────────────────────
+//  CLEAR CACHE
+// ──────────────────────────────────────────
+async function doClearCache() {
+  localStorage.removeItem(DATA_KEY);
+  dataStore = {};
+  closeSb();
+  toast('ok', '🗑️ Cache cleared — fetching fresh data…');
+  await doRefresh(true);
 }
 
 // ──────────────────────────────────────────
