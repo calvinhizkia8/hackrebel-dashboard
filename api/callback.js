@@ -141,10 +141,18 @@ async function fetchAndStoreData(account, token) {
     if (batch.length < 20) break; // last page
   }
 
-  // Filter out live invite clips + private/unpublished videos
-  // Live invite clips have <10 views and are hidden by TikTok on public profile
+  // Filter out private/unpublished (0 views) and live invite clips
+  // Live invite clips always contain "live" in title + have very low views
+  // They are returned by API but hidden on TikTok's public profile grid
+  const liveKeywords = /\blive\b/i;
   const videos = rawVideos
-    .filter(v => (v.view_count || 0) >= 10)
+    .filter(v => {
+      const views = v.view_count || 0;
+      if (views === 0) return false;            // private/unpublished
+      const title = v.title || '';
+      if (liveKeywords.test(title) && views < 500) return false; // live invite clip
+      return true;
+    })
     .map(v => ({
       id:         v.id,
       caption:    v.title || '',
