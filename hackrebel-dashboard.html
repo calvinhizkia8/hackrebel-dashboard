@@ -1345,6 +1345,8 @@ function getLastMonthLabel() {
 // ──────────────────────────────────────────
 //  RENDER: DASHBOARD
 // ──────────────────────────────────────────
+function renderDashboard() {
+  let totFollowers = 0, totLikes = 0, totVideos = 0, postsThisMonth = 0, warns = 0;
 
   clients.forEach(c => {
     const st = computeStats(c.username);
