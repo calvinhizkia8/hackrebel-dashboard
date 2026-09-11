@@ -1295,6 +1295,7 @@ function computeStats(username) {
     profile,
     videos:    sorted,
     recent,
+    recentViews: rViews,
     followers: profile.followers  || mock.followers  || 0,
     totalLikes:profile.totalLikes || mock.totalLikes || 0,
     videoCount:profile.videoCount || mock.videoCount || 0,
@@ -1346,7 +1347,7 @@ function getLastMonthLabel() {
 //  RENDER: DASHBOARD
 // ──────────────────────────────────────────
 function renderDash() {
-  let totFollowers = 0, totLikes = 0, totVideos = 0, postsThisMonth = 0, warns = 0;
+  let totFollowers = 0, totLikes = 0, totVideos = 0, postsThisMonth = 0, warns = 0, viewsThisMonth = 0, viewsLastMonth = 0;
 
   clients.forEach(c => {
     const st = computeStats(c.username);
@@ -1354,6 +1355,7 @@ function renderDash() {
     totLikes       += st.totalLikes;
     totVideos      += st.videoCount;
     postsThisMonth += (st.recent||[]).length;
+    viewsThisMonth += (st.recentViews || 0);
     if (st.warn) warns++;
   });
 
@@ -1366,13 +1368,25 @@ function renderDash() {
     });
     return total;
   })();
+
+  const lastMonthViewsTotal = (() => {
+    let total = 0;
+    clients.forEach(c => {
+      const st = computeStats(c.username);
+      const lastMonth = getLastMonthStats(st.videos);
+      total += (lastMonth.views || 0);
+    });
+    return total;
+  })();
   
   document.getElementById('kpiGrid').innerHTML = [
     { label:'Total Accounts',  value: clients.length,    sub:'accounts tracked',         accent:'var(--pink)' },
     { label:'Total Followers', value: fmt(totFollowers), sub:'across all accounts',       accent:'var(--cyan)' },
     { label:'Total Likes',     value: fmt(totLikes),     sub:'all-time combined',         accent:'var(--purple)' },
     { label:'Posts This Month',value: postsThisMonth,    sub:new Date().toLocaleString('id-ID',{month:'long',year:'numeric'}), accent:'var(--amber)' },
+    { label:'Views This Month', value: fmt(viewsThisMonth), sub: new Date().toLocaleString('id-ID',{month:'long',year:'numeric'}), accent: 'var(--blue)' },
     { label:'Posts Last Month', value: lastMonthPostsTotal, sub: getLastMonthLabel(), accent: 'var(--green)' },
+    { label:'Views Last Month', value: fmt(viewsLastMonth), sub: getLastMonthLabel(), accent: 'var(--lime)' },
     { label:'Needs Attention', value: warns,
       sub: warns > 0 ? warns+' inactive account(s)' : 'All accounts active',
       accent: warns > 0 ? 'var(--pink)' : 'var(--green)' },
@@ -1426,7 +1440,7 @@ function renderDash() {
           <div class="cbadge">${c.category||'—'}</div>
         </div>
         <hr class="cdivider"/>
-        <div class="cstats" style="grid-template-columns:repeat(4,1fr)">
+        <div class="cstats" style="grid-template-columns:repeat(6,1fr)">
           <div>
             <div class="cslabel">Followers</div>
             <div class="csval">${st.source==='mock'&&!st.followers
@@ -1444,12 +1458,16 @@ function renderDash() {
             <div class="csval" style="color:var(--amber)">${st.source==='mock'?'—':postsThisMonthCount}</div>
           </div>
           <div>
-            <div class="cslabel">Last Month</div>
+            <div class="cslabel">Last Posts</div>
             <div class="csval" style="color:var(--green)">${st.source==='mock'?'—':getLastMonthStats(st.videos).count}</div>
           </div>
           <div>
-            <div class="cslabel">Eng. Rate</div>
-            <div class="csval" style="color:var(--cyan)">${st.engRate==='—'?'—':st.engRate+'%'}</div>
+            <div class="cslabel">Views/Mo</div>
+            <div class="csval" style="color:var(--blue)">${st.source==='mock'?'—':fmt(st.recentViews)}</div>
+          </div>
+          <div>
+            <div class="cslabel">Last Views</div>
+            <div class="csval" style="color:var(--lime)">${st.source==='mock'?'—':fmt(getLastMonthStats(st.videos).views)}</div>
           </div>
         </div>
         <div class="cfooter">
