@@ -98,9 +98,9 @@ async function fetchAndStoreData(account, token) {
   const allVideos = [];
   let cursor = null;
   for (let page = 0; page < 5; page++) {
-    const body = { max_count: 20, fields: ['id','title','cover_image_url','create_time','share_url','view_count','like_count','comment_count','share_count'] };
+    const body = { max_count: 20 };
     if (cursor) body.cursor = cursor;
-    const videoRes = await fetch('https://open.tiktokapis.com/v2/video/list/', {
+    const videoRes = await fetch('https://open.tiktokapis.com/v2/video/list/?fields=id,title,cover_image_url,create_time,share_url,view_count,like_count,comment_count,share_count', {
       method: 'POST', headers, body: JSON.stringify(body),
     });
     const videoData = await videoRes.json();
